@@ -4,7 +4,7 @@ services:
     image: ghcr.io/schwoby/work-order-system:development
     container_name: work-order-development
     ports:
-      - "3003:8080"
+      - "3004:8080"
     volumes:
       - ./data:/app/data
       - /etc/localtime:/etc/localtime:ro

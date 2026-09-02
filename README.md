@@ -35,7 +35,7 @@ User-defined notifications, including but not limited to:
 
 ## Completed Work
 - updated copyright notice to Version 0.2
-- 
+- corrected errors in update process by removing volumes static & templates from yml
 - 
 
 ## Known Issues
@@ -50,5 +50,5 @@ User-defined notifications, including but not limited to:
 
 ## Notes
 - Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
-- 
+- the volumes for templates and static kept the files from being updated at time of update.
 - 

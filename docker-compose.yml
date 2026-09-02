@@ -1,0 +1,25 @@
+services:
+  wo_app:
+    build: .
+    image: ghcr.io/schwoby/work-order-system:main
+    container_name: work-order-system
+    ports:
+      - "3003:8080"
+    volumes:
+      - ./data:/app/data
+      - ./static:/app/static
+      - ./templates:/app/templates
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      FLASK_ENV: production
+      FLASK_DEBUG: "0"
+      TEMPLATES_AUTO_RELOAD: "true"
+      TZ: America/Chicago
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

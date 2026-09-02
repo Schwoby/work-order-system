@@ -30,8 +30,6 @@ User-defined notifications, including but not limited to:
 
 ## Current Goals
 - Combine the contents of 'static' and 'templates' into a single folder called 'assets'.
-- 
-- 
 
 ## Completed Work
 - updated copyright notice to Version 0.2
@@ -41,15 +39,10 @@ User-defined notifications, including but not limited to:
 
 ## Known Issues
 - 
-- 
-- 
 
 ## Next Steps
-- 
-- 
 - 
 
 ## Notes
 - Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
 - the volumes for templates and static kept the files from being updated at time of update.
-- 

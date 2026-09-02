@@ -35,7 +35,7 @@ User-defined notifications, including but not limited to:
 
 ## Completed Work
 - updated copyright notice to Version 0.2
-- corrected errors in update process by removing volumes static & templates from yml
+- corrected errors in update process by removing volumes static & templates and removing build reference from yml
 - updated container name and port number in yml for side-by-side running with main branch
 
 ## Known Issues

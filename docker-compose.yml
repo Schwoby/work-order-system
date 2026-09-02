@@ -7,7 +7,8 @@ services:
       - "3003:8080"
     volumes:
       - ./data:/app/data
-      - ./assets:/app/assets
+      - ./static:/app/static
+      - ./templates:/app/templates
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:

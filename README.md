@@ -34,7 +34,7 @@ User-defined notifications, including but not limited to:
 - 
 
 ## Completed Work
-- 
+- updated copyright notice to Version 0.2
 - 
 - 
 

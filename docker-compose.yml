@@ -1,7 +1,7 @@
 services:
   wo_app:
     build: .
-    image: ghcr.io/schwoby/work-order-system:main
+    image: ghcr.io/schwoby/work-order-system:development
     container_name: work-order-system
     ports:
       - "3003:8080"

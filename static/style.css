@@ -44,10 +44,10 @@ h4 a:hover {
 	font-size: 1em;
 }
 h4::before {
-	content:"Version: 0.2 ";
+	content:"© 2025 Kurt Schwob. All rights reserved. ";
 }
 h4::after {
-	content:" © 2025 Kurt Schwob. All rights reserved.";
+	content:" Version: 0.2";
 }
 table {
 	border-collapse: collapse;

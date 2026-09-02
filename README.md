@@ -29,8 +29,8 @@ User-defined notifications, including but not limited to:
   - Push notification service, such as Pushover
 
 ## Current Goals
-- Upload current files to main branch
 - Combine the contents of 'static' and 'templates' into a single folder called 'assets'.
+- 
 - 
 
 ## Completed Work
@@ -49,6 +49,6 @@ User-defined notifications, including but not limited to:
 - 
 
 ## Notes
-- 
+- Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
 - 
 - 

@@ -8,6 +8,10 @@ Source code: https://github.com/Schwoby/work-order-system/
 
 ## Overview
 
+This is the Development branch and should not intended for typical users.
+
+## Overview
+
 This project is intended to be run as a containerized application. Users can create their own local instance from the source code in this repository, while the application data is stored locally in a Docker volume-mounted directory.
 
 The application includes:

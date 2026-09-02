@@ -29,11 +29,10 @@ User-defined notifications, including but not limited to:
   - Push notification service, such as Pushover
 
 ## Current Goals
-- Combine the contents of 'static' and 'templates' into a single folder called 'assets'.
+- Google account integration for user creation
 
 ## Completed Work
 - updated copyright notice to Version 0.2
-- corrected errors in update process by removing volumes static & templates and removing build reference from yml
 - updated container name and port number in yml for side-by-side running with main branch
 - added README_DEV.md for better version control
 

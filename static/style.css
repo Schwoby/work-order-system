@@ -47,7 +47,7 @@ h4::before {
 	content:"Copyright © 2025 ";
 }
 h4::after {
-	content:" - Version: 0.1";
+	content:" - Version: 0.2";
 }
 table {
 	border-collapse: collapse;

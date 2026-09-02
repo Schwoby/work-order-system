@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Completed Work Orders</title>
+  <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Completed Work Orders</h1>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th class='left'>Subject</th>
+      <th class='left'>Description</th>
+      <th>Area</th>
+      <th>Needed By</th>
+      <th>Requested By</th>
+      <th>Submitted</th>
+      <th class='left'>Completion Notes</th>
+      <th>Completed</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for wo in workorders %}
+    <tr>
+      <td>{{ wo['id'] }}</td>
+      <td class='left cap'>{{ wo['subject'] }}</td>
+      <td class='left capfirst'>{{ wo['body'] }}</td>
+      <td class='cap'>{{ wo['room'] or '' }}</td>
+      <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed'] | format_needed_date }}</span> <span class="no-wrap">{{ wo['needed'] | format_needed_time }}</span>{% endif %}</td>
+      <td class='cap'>{{ wo['requested_by'] or '' }}</td>
+      <td>{{ wo['submitted'] or '' }}</td>
+      <td class='left capfirst'>{{ wo['completion_text'] or '' }}</td>
+      <td>{{ wo['last_update'] or '' }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9">No completed work orders.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h3><a href="{{ url_for('index') }}">Back to Open Work Orders</a></h3>
+<h4><a href="http://KurtSchwob.com" title="Kurt Schwob" target="_blank">Kurt Schwob</a></h4>
+</body>
+</html>

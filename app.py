@@ -37,8 +37,10 @@ def get_db():
     return conn
 
 def init_db():
-    """Ensure workorders table exists using current schema (no UTC defaults)."""
+    """Ensure all tables exist using current schema."""
     conn = get_db()
+
+    # Existing workorders table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS workorders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +55,53 @@ def init_db():
             last_update TEXT DEFAULT ''
         )
     """)
+
+    # Internal account table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS internal_account (
+            user_key INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_date TEXT NOT NULL,
+            account_status TEXT NOT NULL,
+            last_login TEXT
+        )
+    """)
+
+    # Login/auth table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS login_auth (
+            user_key INTEGER NOT NULL,
+            auth_provider TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            password_hash TEXT,
+            PRIMARY KEY (user_key),
+            FOREIGN KEY (user_key) REFERENCES internal_account(user_key)
+        )
+    """)
+
+    # Profile/preferences table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS profile_preferences (
+            user_key INTEGER NOT NULL,
+            full_name TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            timezone TEXT NOT NULL,
+            theme TEXT NOT NULL,
+            default_view TEXT NOT NULL,
+            PRIMARY KEY (user_key),
+            FOREIGN KEY (user_key) REFERENCES internal_account(user_key)
+        )
+    """)
+
+    # Roles table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS user_roles (
+            user_key INTEGER NOT NULL,
+            role_name TEXT NOT NULL,
+            PRIMARY KEY (user_key, role_name),
+            FOREIGN KEY (user_key) REFERENCES internal_account(user_key)
+        )
+    """)
+
     conn.commit()
     conn.close()
 

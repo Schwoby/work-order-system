@@ -66,13 +66,41 @@ The application runs as a Flask web app inside a Docker container.
 
 - Flask listens on port `8080` inside the container
 - Docker Compose maps that to host port `3003`
-- The SQLite database is stored in `./data/database.db`
+- The SQLite database is stored at `./data/database.db` within your local **root directory**
 - The `templates/` and `static/` folders are mounted into the container so the app can use its HTML and static assets
 
 ## Getting Started
 
-### 1. Clone the repository
+### 1. Create a local root directory
+Create a local directory for the application to operate from (we recommend naming it `WorkOrderSystem`).
+
+### 2. Create `docker-compose.yml` in your root directory
+Create `docker-compose.yml` in this directory using your preferred text editor.
+
+Then **copy/paste the contents** of the provided `docker-compose.yml` from the repository into your local `docker-compose.yml`.
+
+When you copy/paste, update the following values as needed:
+
+- **Time zone (`TZ`)**: set this to your local time zone so container timestamps reflect your local time.
+- **Port mapping**: verify the host port will not conflict with anything else on your machine.  
+  - Default mapping: container `8080` → host `3003`
+
+### 3. Pull and start the container
+From within the root directory, run:
 
 ```bash
-git clone https://github.com/Schwoby/work-order-system.git
-cd work-order-system
+docker compose pull && docker compose up -d
+```
+
+### 4. Open the application
+After the container starts, access the app at:
+
+- `http://localhost:3003`
+
+## Data Location (SQLite)
+
+The SQLite database will be stored locally at:
+
+- `./data/database.db`
+
+This path is relative to the **root directory you created** (`WorkOrderSystem/`). If the `data/` folder does not exist yet, it will be created as part of the container’s startup/initialization.

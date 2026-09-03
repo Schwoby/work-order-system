@@ -35,6 +35,7 @@ User-defined notifications, including but not limited to:
 - updated copyright notice to Version 0.2
 - updated container name and port number in yml for side-by-side running with main branch
 - added README_DEV.md for better version control
+- added table creation for user control
 
 ## Known Issues
 - 

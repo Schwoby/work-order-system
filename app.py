@@ -61,7 +61,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS internal_account (
             user_key INTEGER PRIMARY KEY AUTOINCREMENT,
             created_date TEXT NOT NULL,
-            account_status TEXT NOT NULL,
+            role_date TEXT,
             last_login TEXT
         )
     """)
@@ -92,13 +92,24 @@ def init_db():
         )
     """)
 
-    # Roles table
+    # Role definitions table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS user_roles (
-            user_key INTEGER NOT NULL,
+            role_key INTEGER PRIMARY KEY AUTOINCREMENT,
             role_name TEXT NOT NULL,
-            PRIMARY KEY (user_key, role_name),
-            FOREIGN KEY (user_key) REFERENCES internal_account(user_key)
+            role_desc TEXT NOT NULL,
+            role_perm TEXT NOT NULL
+        )
+    """)
+
+    # User-role link table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS account_roles (
+            user_key INTEGER NOT NULL,
+            role_key INTEGER NOT NULL,
+            PRIMARY KEY (user_key, role_key),
+            FOREIGN KEY (user_key) REFERENCES internal_account(user_key),
+            FOREIGN KEY (role_key) REFERENCES user_roles(role_key)
         )
     """)
 

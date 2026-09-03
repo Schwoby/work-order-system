@@ -95,10 +95,9 @@ def init_db():
     # Role definitions table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS user_roles (
-            role_key INTEGER PRIMARY KEY AUTOINCREMENT,
+            role_key INTEGER PRIMARY KEY,
             role_name TEXT NOT NULL,
-            role_desc TEXT NOT NULL,
-            role_perm TEXT NOT NULL
+            role_perm INTEGER NOT NULL
         )
     """)
 
@@ -112,6 +111,21 @@ def init_db():
             FOREIGN KEY (role_key) REFERENCES user_roles(role_key)
         )
     """)
+
+    # Seed default roles if table is empty
+    existing_roles = conn.execute("SELECT COUNT(*) AS cnt FROM user_roles").fetchone()["cnt"]
+    if existing_roles == 0:
+        conn.executemany("""
+            INSERT INTO user_roles (role_key, role_name, role_perm)
+            VALUES (?, ?, ?)
+        """, [
+            (1, "pending", 0),
+            (2, "suspended", 0),
+            (3, "rejected", 0),
+            (4, "admin", 1),
+            (5, "submitter", 2),
+            (6, "fulfiller", 3),
+        ])
 
     conn.commit()
     conn.close()

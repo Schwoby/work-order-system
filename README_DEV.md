@@ -36,6 +36,7 @@ User-defined notifications, including but not limited to:
 - updated container name and port number in yml for side-by-side running with main branch
 - added README_DEV.md for better version control
 - added table creation for user control
+- pre-populating user_roles table
 
 ## Known Issues
 - 

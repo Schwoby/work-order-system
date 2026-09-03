@@ -47,8 +47,6 @@ The application depends on the following files and folders:
 - `static/` — static assets required by the app
 - `data/` — local data directory for the SQLite database
 
-> Additional required files live in the `templates/` and `static/` folders. These folders may be reorganized in the future.
-
 ## Features
 
 - Create new work orders

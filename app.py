@@ -73,9 +73,9 @@ def init_db():
             auth_provider TEXT NOT NULL,
             user_id TEXT NOT NULL,
             password_hash TEXT,
-            PRIMARY KEY (user_key),
-            FOREIGN KEY (user_key) REFERENCES internal_account(user_key)
-        )
+            PRIMARY KEY (user_key, role_key),
+            FOREIGN KEY (user_key) REFERENCES internal_account(user_key),
+            FOREIGN KEY (role_key) REFERENCES user_roles(role_key)        )
     """)
 
     # Profile/preferences table

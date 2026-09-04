@@ -95,7 +95,7 @@ def init_db():
     # Role definitions table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS user_roles (
-            role_key INTEGER PRIMARY KEY,
+            role_key INTEGER PRIMARY KEY AUTOINCREMENT,
             role_name TEXT NOT NULL,
             role_perm INTEGER NOT NULL
         )

@@ -106,9 +106,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS account_roles (
             user_key INTEGER NOT NULL,
             role_key INTEGER NOT NULL,
-            PRIMARY KEY (user_key, role_key),
+            PRIMARY KEY (user_key),
             FOREIGN KEY (user_key) REFERENCES internal_account(user_key),
-            FOREIGN KEY (role_key) REFERENCES user_roles(role_key)
         )
     """)
 

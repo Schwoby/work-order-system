@@ -6,11 +6,11 @@ This branch tracks active development work that has not yet been merged into pro
 
 ### User Management
 - Adding users
-  - User creation via Google account
   - Raw user creation
 - Adding user roles, including but not limited to:
   - Submitter
   - Fulfiller
+  - Administrator
 
 ### Notifications
 User-defined notifications, including but not limited to:
@@ -29,7 +29,15 @@ User-defined notifications, including but not limited to:
   - Push notification service, such as Pushover
 
 ## Current Goals
-- Google account integration for user creation
+- User creation
+  - Initial user creation (auto assigned admin role)
+  - additional users (must be accepted by an admin, roles selected at time of acceptance)
+- Profile page
+  - review all personal info
+  - change key personal info
+- Notification page
+  - add methods of being notifed
+  - pair methods with content type
 
 ## Completed Work
 - updated copyright notice to Version 0.2
@@ -39,11 +47,14 @@ User-defined notifications, including but not limited to:
 - pre-populating user_roles table
 
 ## Known Issues
-- 
+- Further feature expansion can make submitter and fulfiller roles too broad of roles
 
 ## Next Steps
-- 
+- Create new user sign-up form
+- Create user processing logic
+- Create user role logic
 
 ## Notes
 - Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
 - the volumes for templates and static kept the files from being updated at time of update.
+- Google account integration requires each installation to have it's own OAuth setup, which is more than i want to support at this point. may approach at a later date.

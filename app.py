@@ -283,17 +283,6 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-def profile_only_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        user = get_current_user()
-        if not user:
-            return redirect(url_for("index"))
-        if not user_profile_complete(user["user_key"]):
-            return redirect(url_for("create_profile"))
-        return view(*args, **kwargs)
-    return wrapped
-
 def active_access_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -333,9 +322,6 @@ def admin_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-# ----------------------------------------------------------------------
-# AUTH HELPERS
-# ----------------------------------------------------------------------
 def create_user_account(email, password):
     email_clean = normalize_email(email)
 
@@ -853,8 +839,12 @@ def admin_user_edit(user_key):
 
             conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
 
-            role_keys = request.form.getlist("role_keys")
-            for role_key in role_keys:
+            status_roles = {"pending", "rejected", "suspended", "admin"}
+            access_roles = {"submitter", "fulfiller"}
+
+            selected_roles = request.form.getlist("role_keys")
+
+            for role_key in selected_roles:
                 conn.execute(
                     "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
                     (user_key, role_key)

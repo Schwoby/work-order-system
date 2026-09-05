@@ -50,6 +50,7 @@ User-defined notifications, including but not limited to:
 
 ## Known Issues
 - Further feature expansion can make submitter and fulfiller roles too broad of roles
+- profile edit for other users can happen by changing URL profile user number
 
 ## Next Steps
 - Create user management method for admins

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo   # built-in from Python 3.9+
 from werkzeug.security import generate_password_hash, check_password_hash
 import time
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-change-me")
@@ -314,6 +315,14 @@ def get_timezones():
         "Europe/Paris",
     ]
 
+def login_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not get_current_user():
+            return redirect(url_for("index"))
+        return view(*args, **kwargs)
+    return wrapped
+
 # ----------------------------------------------------------------------
 # ROUTES
 # ----------------------------------------------------------------------
@@ -321,8 +330,29 @@ def get_timezones():
 def healthz():
     return {"status": "ok"}, 200
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
+    if request.method == "POST":
+        email = request.form.get("user_id", "")
+        password = request.form.get("password", "")
+
+        success, result = authenticate_user(email, password)
+        if not success:
+            flash(str(result))
+            return redirect(url_for("index"))
+
+        session["user_key"] = result
+        flash("Login successful.")
+        return redirect(url_for("wo_current"))
+
+    if get_current_user():
+        return redirect(url_for("wo_current"))
+
+    return render_template("user_login.html", current_user=None)
+
+@app.route("/wo/current")
+@login_required
+def wo_current():
     conn = get_db()
     wos = conn.execute("""
         SELECT * FROM workorders
@@ -341,15 +371,21 @@ def index():
     """).fetchall()
     conn.close()
     return render_template(
-        "index.html",
+        "wo_current.html",
         workorders=wos,
         now=datetime.now(LOCAL_TZ),
         soon=datetime.now(LOCAL_TZ) + timedelta(hours=72),
         current_user=get_current_user()
     )
 
+@app.route("/wo/create")
+@login_required
+def wo_create():
+    return render_template("wo_create.html", current_user=get_current_user())
+
 @app.route("/completed")
-def completed():
+@login_required
+def wo_completed():
     conn = get_db()
     wos = conn.execute("""
         SELECT * FROM workorders
@@ -357,9 +393,10 @@ def completed():
         ORDER BY last_update DESC
     """).fetchall()
     conn.close()
-    return render_template("completed.html", workorders=wos, current_user=get_current_user())
+    return render_template("wo_completed.html", workorders=wos, current_user=get_current_user())
 
 @app.route("/add", methods=["POST"])
+@login_required
 def add():
     subject = request.form["subject"]
     body = request.form["body"]
@@ -377,16 +414,18 @@ def add():
     """, (subject, body, room, needed, requested_by, now_local, now_local))
     conn.commit()
     conn.close()
-    return redirect(url_for("index"))
+    return redirect(url_for("wo_current"))
 
 @app.route("/edit/<int:wo_id>")
-def edit(wo_id):
+@login_required
+def wo_edit(wo_id):
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
     conn.close()
-    return render_template("edit.html", wo=wo, current_user=get_current_user())
+    return render_template("wo_edit.html", wo=wo, current_user=get_current_user())
 
 @app.route("/update/<int:wo_id>", methods=["POST"])
+@login_required
 def update(wo_id):
     completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]
@@ -414,7 +453,7 @@ def update(wo_id):
           completion_text, completed, ts, wo_id))
     conn.commit()
     conn.close()
-    return redirect(url_for("index"))
+    return redirect(url_for("wo_current"))
 
 @app.route("/user/create", methods=["GET", "POST"])
 def user_create():
@@ -436,34 +475,20 @@ def user_create():
         flash("Account created successfully. Please complete your profile.")
         return redirect(url_for("user_profile"))
 
-    return render_template("user_create.html", current_user=get_current_user())
-
-@app.route("/user/login", methods=["GET", "POST"])
-def user_login():
-    if request.method == "POST":
-        email = request.form.get("user_id", "")
-        password = request.form.get("password", "")
-
-        success, result = authenticate_user(email, password)
-        if not success:
-            flash(str(result))
-            return redirect(url_for("user_login"))
-
-        session["user_key"] = result
-        return redirect(url_for("index"))
-
-    return render_template("user_login.html", current_user=get_current_user())
+    return render_template("user_create.html", current_user=None)
 
 @app.route("/user/logout")
+@login_required
 def user_logout():
     session.clear()
     return redirect(url_for("index"))
 
 @app.route("/user/profile", methods=["GET", "POST"])
+@login_required
 def user_profile():
     user = get_current_user()
     if not user:
-        return redirect(url_for("user_login"))
+        return redirect(url_for("index"))
 
     conn = get_db()
     try:
@@ -498,7 +523,7 @@ def user_profile():
 
             conn.commit()
             flash("Profile saved.")
-            return redirect(url_for("index"))
+            return redirect(url_for("wo_current"))
 
         prefs = None
         if existing:
@@ -516,6 +541,7 @@ def user_profile():
         conn.close()
 
 @app.route("/user/edit/<int:user_key>", methods=["GET", "POST"])
+@login_required
 def user_edit(user_key):
     conn = get_db()
     try:
@@ -528,7 +554,7 @@ def user_edit(user_key):
 
         if not user:
             flash("User not found.")
-            return redirect(url_for("user_login"))
+            return redirect(url_for("index"))
 
         prefs = conn.execute("""
             SELECT * FROM profile_preferences WHERE user_key = ?

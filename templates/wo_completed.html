@@ -42,12 +42,7 @@
   </tbody>
 </table>
 
-<div class="nav-links">
-  <p><a href="{{ url_for('wo_current') }}">Back to Open Work Orders</a></p>
-  <p><a href="{{ url_for('wo_create') }}">Create Work Order</a></p>
-  <p><a href="{{ url_for('user_profile') }}">User Profile</a></p>
-  <p><a href="{{ url_for('user_logout') }}">Logout</a></p>
-</div>
+{% include "_nav.html" %}
 
 <h4></h4>
 </body>

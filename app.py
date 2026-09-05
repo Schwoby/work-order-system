@@ -189,11 +189,6 @@ def user_exists_by_email(conn, user_id_lower):
     return row is not None
 
 def first_user_role_name(conn):
-    """
-    Determine role BEFORE inserting the new user.
-    If there are no existing login_auth rows, this is the first user and becomes admin.
-    Otherwise pending.
-    """
     row = conn.execute("SELECT COUNT(*) AS cnt FROM login_auth").fetchone()
     return "admin" if row["cnt"] == 0 else "pending"
 
@@ -214,6 +209,25 @@ def get_current_user():
     finally:
         conn.close()
 
+def get_current_user_role():
+    user = get_current_user()
+    if not user:
+        return None
+
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT ur.role_key, ur.role_name, ur.role_perm
+            FROM account_roles ar
+            JOIN user_roles ur ON ur.role_key = ar.role_key
+            WHERE ar.user_key = ?
+            ORDER BY ur.role_key ASC
+            LIMIT 1
+        """, (user["user_key"],)).fetchone()
+        return row
+    finally:
+        conn.close()
+
 def user_profile_complete(user_key):
     conn = get_db()
     try:
@@ -222,6 +236,40 @@ def user_profile_complete(user_key):
             (user_key,)
         ).fetchone()
         return row is not None
+    finally:
+        conn.close()
+
+def user_access_allowed(user_key):
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT ur.role_perm
+            FROM account_roles ar
+            JOIN user_roles ur ON ur.role_key = ar.role_key
+            WHERE ar.user_key = ?
+            ORDER BY ur.role_key ASC
+            LIMIT 1
+        """, (user_key,)).fetchone()
+        if not row:
+            return False
+        return int(row["role_perm"]) > 0
+    finally:
+        conn.close()
+
+def user_status_text(user_key):
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT ur.role_name
+            FROM account_roles ar
+            JOIN user_roles ur ON ur.role_key = ar.role_key
+            WHERE ar.user_key = ?
+            ORDER BY ur.role_key ASC
+            LIMIT 1
+        """, (user_key,)).fetchone()
+        if not row:
+            return "Unknown"
+        return row["role_name"].capitalize()
     finally:
         conn.close()
 
@@ -251,7 +299,6 @@ def create_user_account(email, password):
         created_date = epoch_now()
         role_date = epoch_now()
         password_hash = generate_password_hash(password)
-        password = None
 
         cur = conn.cursor()
         cur.execute(
@@ -284,7 +331,6 @@ def create_user_account(email, password):
         return False, f"Error creating user: {e}"
     finally:
         conn.close()
-        password_hash = None
 
 def authenticate_user(email, password):
     email_clean = normalize_email(email)
@@ -329,11 +375,8 @@ def get_timezones():
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
-        user = get_current_user()
-        if not user:
+        if not get_current_user():
             return redirect(url_for("index"))
-        if request.endpoint not in ("user_profile", "user_create", "index") and not user_profile_complete(user["user_key"]):
-            return redirect(url_for("user_profile"))
         return view(*args, **kwargs)
     return wrapped
 
@@ -345,6 +388,19 @@ def onboarding_required(view):
             return redirect(url_for("index"))
         if not user_profile_complete(user["user_key"]):
             return redirect(url_for("user_profile"))
+        return view(*args, **kwargs)
+    return wrapped
+
+def active_access_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return redirect(url_for("index"))
+        if not user_profile_complete(user["user_key"]):
+            return redirect(url_for("user_profile"))
+        if not user_access_allowed(user["user_key"]):
+            return redirect(url_for("user_edit", user_key=user["user_key"]))
         return view(*args, **kwargs)
     return wrapped
 
@@ -367,21 +423,26 @@ def index():
             return redirect(url_for("index"))
 
         session["user_key"] = result
+        if not user_profile_complete(result):
+            return redirect(url_for("user_profile"))
+        if not user_access_allowed(result):
+            flash("Your account is pending, suspended, or rejected.")
+            return redirect(url_for("user_edit", user_key=result))
         flash("Login successful.")
-        if user_profile_complete(result):
-            return redirect(url_for("wo_current"))
-        return redirect(url_for("user_profile"))
+        return redirect(url_for("wo_current"))
 
     if get_current_user():
         user = get_current_user()
-        if user_profile_complete(user["user_key"]):
-            return redirect(url_for("wo_current"))
-        return redirect(url_for("user_profile"))
+        if not user_profile_complete(user["user_key"]):
+            return redirect(url_for("user_profile"))
+        if not user_access_allowed(user["user_key"]):
+            return redirect(url_for("user_edit", user_key=user["user_key"]))
+        return redirect(url_for("wo_current"))
 
     return render_template("user_login.html", current_user=None)
 
 @app.route("/wo/current")
-@onboarding_required
+@active_access_required
 def wo_current():
     conn = get_db()
     wos = conn.execute("""
@@ -409,12 +470,12 @@ def wo_current():
     )
 
 @app.route("/wo/create")
-@onboarding_required
+@active_access_required
 def wo_create():
     return render_template("wo_create.html", current_user=get_current_user())
 
 @app.route("/completed")
-@onboarding_required
+@active_access_required
 def wo_completed():
     conn = get_db()
     wos = conn.execute("""
@@ -426,7 +487,7 @@ def wo_completed():
     return render_template("wo_completed.html", workorders=wos, current_user=get_current_user())
 
 @app.route("/add", methods=["POST"])
-@onboarding_required
+@active_access_required
 def add():
     subject = request.form["subject"]
     body = request.form["body"]
@@ -447,7 +508,7 @@ def add():
     return redirect(url_for("wo_current"))
 
 @app.route("/edit/<int:wo_id>")
-@onboarding_required
+@active_access_required
 def wo_edit(wo_id):
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
@@ -455,7 +516,7 @@ def wo_edit(wo_id):
     return render_template("wo_edit.html", wo=wo, current_user=get_current_user())
 
 @app.route("/update/<int:wo_id>", methods=["POST"])
-@onboarding_required
+@active_access_required
 def update(wo_id):
     completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]
@@ -502,8 +563,13 @@ def user_create():
             return redirect(url_for("user_create"))
 
         session["user_key"] = result
-        flash("Account created successfully. Please complete your profile.")
-        return redirect(url_for("user_profile"))
+        if not user_profile_complete(result):
+            return redirect(url_for("create_profile"))
+        if not user_access_allowed(result):
+            flash("Your account is pending, suspended, or rejected.")
+            return redirect(url_for("user_edit", user_key=result))
+        flash("Account created successfully.")
+        return redirect(url_for("wo_current"))
 
     return render_template("user_create.html", current_user=None)
 
@@ -516,6 +582,15 @@ def user_logout():
 @app.route("/user/profile", methods=["GET", "POST"])
 @login_required
 def user_profile():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    return redirect(url_for("create_profile"))
+
+@app.route("/profile/create", methods=["GET", "POST"])
+@login_required
+def create_profile():
     user = get_current_user()
     if not user:
         return redirect(url_for("index"))
@@ -536,7 +611,7 @@ def user_profile():
 
             if not all([full_name, display_name, timezone, theme, default_view]):
                 flash("All profile fields are required.")
-                return redirect(url_for("user_profile"))
+                return redirect(url_for("create_profile"))
 
             if existing:
                 conn.execute("""
@@ -552,6 +627,11 @@ def user_profile():
                 """, (user["user_key"], full_name, display_name, timezone, theme, default_view))
 
             conn.commit()
+
+            if not user_access_allowed(user["user_key"]):
+                flash(f"Profile saved, but your account status is {user_status_text(user['user_key'])}.")
+                return redirect(url_for("user_edit", user_key=user["user_key"]))
+
             flash("Profile saved.")
             return redirect(url_for("wo_current"))
 
@@ -562,7 +642,7 @@ def user_profile():
             """, (user["user_key"],)).fetchone()
 
         return render_template(
-            "user_profile.html",
+            "create_profile.html",
             current_user=user,
             prefs=prefs,
             timezones=get_timezones()
@@ -590,6 +670,8 @@ def user_edit(user_key):
             SELECT * FROM profile_preferences WHERE user_key = ?
         """, (user_key,)).fetchone()
 
+        status_text = user_status_text(user_key)
+
         if request.method == "POST":
             new_email = normalize_email(request.form.get("user_id", ""))
             new_password = request.form.get("password", "")
@@ -599,19 +681,6 @@ def user_edit(user_key):
             timezone = request.form.get("timezone", "").strip()
             theme = request.form.get("theme", "").strip()
             default_view = request.form.get("default_view", "").strip()
-
-            if not is_valid_email(new_email):
-                flash("Please enter a valid email address.")
-                return redirect(url_for("user_edit", user_key=user_key))
-
-            email_owner = conn.execute("""
-                SELECT user_key FROM login_auth
-                WHERE LOWER(user_id) = ? AND user_key != ?
-                LIMIT 1
-            """, (new_email, user_key)).fetchone()
-            if email_owner:
-                flash("That email address is already registered to another user.")
-                return redirect(url_for("user_edit", user_key=user_key))
 
             if new_password or verify_password:
                 if new_password != verify_password:
@@ -628,17 +697,10 @@ def user_edit(user_key):
                 password_hash = generate_password_hash(new_password)
                 conn.execute("""
                     UPDATE login_auth
-                    SET user_id = ?, password_hash = ?
+                    SET password_hash = ?
                     WHERE user_key = ?
-                """, (new_email, password_hash, user_key))
-                new_password = None
+                """, (password_hash, user_key))
                 password_hash = None
-            else:
-                conn.execute("""
-                    UPDATE login_auth
-                    SET user_id = ?
-                    WHERE user_key = ?
-                """, (new_email, user_key))
 
             if not all([full_name, display_name, timezone, theme, default_view]):
                 flash("All profile fields are required.")
@@ -658,6 +720,11 @@ def user_edit(user_key):
                 """, (user_key, full_name, display_name, timezone, theme, default_view))
 
             conn.commit()
+
+            if not user_access_allowed(user_key):
+                flash(f"User updated. Current status: {status_text}.")
+                return redirect(url_for("user_edit", user_key=user_key))
+
             flash("User updated.")
             return redirect(url_for("user_edit", user_key=user_key))
 
@@ -666,7 +733,8 @@ def user_edit(user_key):
             current_user=get_current_user(),
             user=user,
             prefs=prefs,
-            timezones=get_timezones()
+            timezones=get_timezones(),
+            status_text=status_text
         )
     finally:
         conn.close()

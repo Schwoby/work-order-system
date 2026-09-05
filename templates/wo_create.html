@@ -20,15 +20,9 @@
   <button type="submit">Submit</button>
 </form>
 
-<div class="nav-links">
-  <p><a href="{{ url_for('wo_current') }}">Back to Open Work Orders</a></p>
-  <p><a href="{{ url_for('wo_completed') }}">View Completed Work Orders</a></p>
-  <p><a href="{{ url_for('user_profile') }}">User Profile</a></p>
-  <p><a href="{{ url_for('user_logout') }}">Logout</a></p>
-</div>
+{% include "_nav.html" %}
 
 <script>
-  // Populate the time dropdown with 15-minute increments in 12h format
   const timeSelect = document.getElementById('needed_time');
   for (let hour = 0; hour < 24; hour++) {
     for (let minute of [0, 15, 30, 45]) {

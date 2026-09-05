@@ -47,16 +47,21 @@ User-defined notifications, including but not limited to:
 - pre-populating user_roles table
 - implemented user login and authentication gui
 - implemented new user creation gui
+- implemented user management gui for admins
 
 ## Known Issues
-- Further feature expansion can make submitter and fulfiller roles too broad of roles
-- profile edit for other users can happen by changing URL profile user number
+- proposed solution - Further feature expansion can make submitter and fulfiller roles too broad of roles
+  - add new table that provides user groups/teams. each group/team can then have individualized submitter/fulfiller rights.
+- submitters currently have full edit access to all fields for all open DBs.
+- submitters currently can edit Completion Notes. this is a field only fulfillers should have access to edit.
+- edit pages sill use the term save instead of update
 
 ## Next Steps
-- Create user management method for admins
+- add submitter field to DB for workorders table. this field should not be editable by anyone at any time, but should be visible as plain text.
 
 ## Notes
 - Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
 - The volumes for templates and static kept the files from being updated at time of update.
 - Google account integration requires each installation to have it's own OAuth setup, which is more than i want to support at this point. may approach at a later date.
 - User management will be the end of v0.2; user integration into system along with notifications will be v0.3
+- fixed - profile edit for other users can happen by changing URL profile user number

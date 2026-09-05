@@ -214,6 +214,17 @@ def get_current_user():
     finally:
         conn.close()
 
+def user_profile_complete(user_key):
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM profile_preferences WHERE user_key = ?",
+            (user_key,)
+        ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
 def create_user_account(email, password):
     email_clean = normalize_email(email)
 
@@ -318,8 +329,22 @@ def get_timezones():
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
-        if not get_current_user():
+        user = get_current_user()
+        if not user:
             return redirect(url_for("index"))
+        if request.endpoint not in ("user_profile", "user_create", "index") and not user_profile_complete(user["user_key"]):
+            return redirect(url_for("user_profile"))
+        return view(*args, **kwargs)
+    return wrapped
+
+def onboarding_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return redirect(url_for("index"))
+        if not user_profile_complete(user["user_key"]):
+            return redirect(url_for("user_profile"))
         return view(*args, **kwargs)
     return wrapped
 
@@ -343,15 +368,20 @@ def index():
 
         session["user_key"] = result
         flash("Login successful.")
-        return redirect(url_for("wo_current"))
+        if user_profile_complete(result):
+            return redirect(url_for("wo_current"))
+        return redirect(url_for("user_profile"))
 
     if get_current_user():
-        return redirect(url_for("wo_current"))
+        user = get_current_user()
+        if user_profile_complete(user["user_key"]):
+            return redirect(url_for("wo_current"))
+        return redirect(url_for("user_profile"))
 
     return render_template("user_login.html", current_user=None)
 
 @app.route("/wo/current")
-@login_required
+@onboarding_required
 def wo_current():
     conn = get_db()
     wos = conn.execute("""
@@ -379,12 +409,12 @@ def wo_current():
     )
 
 @app.route("/wo/create")
-@login_required
+@onboarding_required
 def wo_create():
     return render_template("wo_create.html", current_user=get_current_user())
 
 @app.route("/completed")
-@login_required
+@onboarding_required
 def wo_completed():
     conn = get_db()
     wos = conn.execute("""
@@ -396,7 +426,7 @@ def wo_completed():
     return render_template("wo_completed.html", workorders=wos, current_user=get_current_user())
 
 @app.route("/add", methods=["POST"])
-@login_required
+@onboarding_required
 def add():
     subject = request.form["subject"]
     body = request.form["body"]
@@ -417,7 +447,7 @@ def add():
     return redirect(url_for("wo_current"))
 
 @app.route("/edit/<int:wo_id>")
-@login_required
+@onboarding_required
 def wo_edit(wo_id):
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
@@ -425,7 +455,7 @@ def wo_edit(wo_id):
     return render_template("wo_edit.html", wo=wo, current_user=get_current_user())
 
 @app.route("/update/<int:wo_id>", methods=["POST"])
-@login_required
+@onboarding_required
 def update(wo_id):
     completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]

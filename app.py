@@ -334,6 +334,97 @@ def admin_required(view):
     return wrapped
 
 # ----------------------------------------------------------------------
+# AUTH HELPERS
+# ----------------------------------------------------------------------
+def create_user_account(email, password):
+    email_clean = normalize_email(email)
+
+    conn = get_db()
+    try:
+        if not is_valid_email(email_clean):
+            return False, "Please enter a valid email address."
+
+        if user_exists_by_email(conn, email_clean):
+            return False, "That email address is already registered."
+
+        if not password_meets_rules(password):
+            return False, (
+                "Password must be at least 8 characters and include "
+                "1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character "
+                "from: ! - _ ( ) ."
+            )
+
+        role_name = first_user_role_name(conn)
+        role_key = get_role_key(conn, role_name)
+        if role_key is None:
+            raise RuntimeError(f"Role '{role_name}' not found.")
+
+        created_date = epoch_now()
+        role_date = epoch_now()
+        password_hash = generate_password_hash(password)
+
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO internal_account (created_date, role_date, last_login) VALUES (?, ?, ?)",
+            (created_date, role_date, None)
+        )
+        user_key = cur.lastrowid
+
+        cur.execute(
+            """
+            INSERT INTO login_auth (user_key, auth_provider, user_id, password_hash)
+            VALUES (?, ?, ?, ?)
+            """,
+            (user_key, "local", email_clean, password_hash)
+        )
+
+        cur.execute(
+            "INSERT INTO account_roles (user_key, role_key) VALUES (?, ?)",
+            (user_key, role_key)
+        )
+
+        conn.commit()
+        return True, user_key
+
+    except sqlite3.IntegrityError as e:
+        conn.rollback()
+        return False, f"Database integrity error: {e}"
+    except Exception as e:
+        conn.rollback()
+        return False, f"Error creating user: {e}"
+    finally:
+        conn.close()
+
+def authenticate_user(email, password):
+    email_clean = normalize_email(email)
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT ia.user_key, ia.last_login, la.password_hash, la.user_id
+            FROM login_auth la
+            JOIN internal_account ia ON ia.user_key = la.user_key
+            WHERE LOWER(la.user_id) = ?
+            LIMIT 1
+        """, (email_clean,)).fetchone()
+
+        if not row:
+            return False, "Invalid login."
+
+        if not check_password_hash(row["password_hash"], password or ""):
+            return False, "Invalid login."
+
+        ts = epoch_now()
+        conn.execute(
+            "UPDATE internal_account SET last_login = ? WHERE user_key = ?",
+            (ts, row["user_key"])
+        )
+        conn.commit()
+        return True, row["user_key"]
+
+    finally:
+        conn.close()
+
+# ----------------------------------------------------------------------
 # ROUTES
 # ----------------------------------------------------------------------
 @app.route("/healthz")
@@ -635,7 +726,7 @@ def create_profile():
 def admin_users():
     conn = get_db()
     try:
-        users = conn.execute("""
+        raw_users = conn.execute("""
             SELECT ia.user_key, la.user_id,
                    COALESCE(pp.full_name, '') AS full_name,
                    COALESCE(pp.display_name, '') AS display_name
@@ -685,15 +776,17 @@ def admin_users():
                 la.user_id ASC
         """).fetchall()
 
-        for u in users:
-            role_rows = conn.execute("""
+        users = []
+        for row in raw_users:
+            user_dict = dict(row)
+            user_dict["roles"] = conn.execute("""
                 SELECT ur.role_key, ur.role_name, ur.role_perm
                 FROM account_roles ar
                 JOIN user_roles ur ON ur.role_key = ar.role_key
                 WHERE ar.user_key = ?
                 ORDER BY ur.role_perm ASC, ur.role_name ASC
-            """, (u["user_key"],)).fetchall()
-            u["roles"] = role_rows
+            """, (row["user_key"],)).fetchall()
+            users.append(user_dict)
 
         return render_template(
             "admin_users.html",

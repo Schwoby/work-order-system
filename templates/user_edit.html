@@ -9,6 +9,8 @@
 <body>
 <h1>User Profile</h1>
 
+<p>Status: {{ status_text }}</p>
+
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     <ul class="flash">

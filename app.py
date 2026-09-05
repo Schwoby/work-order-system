@@ -5,6 +5,7 @@ import sqlite3, os, re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo   # built-in from Python 3.9+
 from werkzeug.security import generate_password_hash, check_password_hash
+import time
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-change-me")
@@ -41,11 +42,13 @@ def get_db():
 def now_local_str():
     return datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
+def epoch_now():
+    return str(int(time.time()))
+
 def init_db():
     """Ensure all tables exist using current schema."""
     conn = get_db()
 
-    # Existing workorders table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS workorders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +64,6 @@ def init_db():
         )
     """)
 
-    # Internal account table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS internal_account (
             user_key INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,7 +73,6 @@ def init_db():
         )
     """)
 
-    # User roles table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS user_roles (
             role_key INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +81,6 @@ def init_db():
         )
     """)
 
-    # Login/auth table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS login_auth (
             user_key INTEGER PRIMARY KEY,
@@ -91,7 +91,6 @@ def init_db():
         )
     """)
 
-    # Profile/preferences table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS profile_preferences (
             user_key INTEGER NOT NULL PRIMARY KEY,
@@ -104,7 +103,6 @@ def init_db():
         )
     """)
 
-    # User-role link table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS account_roles (
             user_key INTEGER NOT NULL,
@@ -115,7 +113,6 @@ def init_db():
         )
     """)
 
-    # Seed default roles if table is empty
     existing_roles = conn.execute("SELECT COUNT(*) AS cnt FROM user_roles").fetchone()["cnt"]
     if existing_roles == 0:
         conn.executemany("""
@@ -190,9 +187,14 @@ def user_exists_by_email(conn, user_id_lower):
     ).fetchone()
     return row is not None
 
-def is_first_user(conn):
-    row = conn.execute("SELECT COUNT(*) AS cnt FROM internal_account").fetchone()
-    return row["cnt"] == 0
+def first_user_role_name(conn):
+    """
+    Determine role BEFORE inserting the new user.
+    If there are no existing login_auth rows, this is the first user and becomes admin.
+    Otherwise pending.
+    """
+    row = conn.execute("SELECT COUNT(*) AS cnt FROM login_auth").fetchone()
+    return "admin" if row["cnt"] == 0 else "pending"
 
 def get_current_user():
     user_key = session.get("user_key")
@@ -229,14 +231,20 @@ def create_user_account(email, password):
                 "from: ! - _ ( ) ."
             )
 
-        created_date = now_local_str()
+        role_name = first_user_role_name(conn)
+        role_key = get_role_key(conn, role_name)
+        if role_key is None:
+            raise RuntimeError(f"Role '{role_name}' not found.")
+
+        created_date = epoch_now()
+        role_date = epoch_now()
         password_hash = generate_password_hash(password)
         password = None
 
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO internal_account (created_date, role_date, last_login) VALUES (?, ?, ?)",
-            (created_date, None, None)
+            (created_date, role_date, None)
         )
         user_key = cur.lastrowid
 
@@ -247,11 +255,6 @@ def create_user_account(email, password):
             """,
             (user_key, "local", email_clean, password_hash)
         )
-
-        role_name = "admin" if is_first_user(conn) else "pending"
-        role_key = get_role_key(conn, role_name)
-        if role_key is None:
-            raise RuntimeError(f"Role '{role_name}' not found.")
 
         cur.execute(
             "INSERT INTO account_roles (user_key, role_key) VALUES (?, ?)",
@@ -289,7 +292,7 @@ def authenticate_user(email, password):
         if not check_password_hash(row["password_hash"], password or ""):
             return False, "Invalid login."
 
-        ts = now_local_str()
+        ts = epoch_now()
         conn.execute(
             "UPDATE internal_account SET last_login = ? WHERE user_key = ?",
             (ts, row["user_key"])
@@ -320,7 +323,6 @@ def healthz():
 
 @app.route("/")
 def index():
-    """Show all open (not completed) work orders; order: past due → scheduled → no date."""
     conn = get_db()
     wos = conn.execute("""
         SELECT * FROM workorders
@@ -348,7 +350,6 @@ def index():
 
 @app.route("/completed")
 def completed():
-    """Show completed work orders."""
     conn = get_db()
     wos = conn.execute("""
         SELECT * FROM workorders
@@ -360,7 +361,6 @@ def completed():
 
 @app.route("/add", methods=["POST"])
 def add():
-    """Insert new work order."""
     subject = request.form["subject"]
     body = request.form["body"]
     room = request.form.get("room")
@@ -381,7 +381,6 @@ def add():
 
 @app.route("/edit/<int:wo_id>")
 def edit(wo_id):
-    """Edit page."""
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
     conn.close()
@@ -389,7 +388,6 @@ def edit(wo_id):
 
 @app.route("/update/<int:wo_id>", methods=["POST"])
 def update(wo_id):
-    """Update an existing work order."""
     completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]
     body = request.form["body"]
@@ -417,8 +415,6 @@ def update(wo_id):
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
-
-# ---------------- USER MANAGEMENT ROUTES ----------------
 
 @app.route("/user/create", methods=["GET", "POST"])
 def user_create():
@@ -619,9 +615,6 @@ def user_edit(user_key):
     finally:
         conn.close()
 
-# ----------------------------------------------------------------------
-# APP LAUNCHER
-# ----------------------------------------------------------------------
 if __name__ == "__main__":
     debug = env_bool("FLASK_DEBUG", False)
     app.run(host="0.0.0.0", port=8080, debug=debug)

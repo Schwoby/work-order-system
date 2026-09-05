@@ -121,11 +121,11 @@ def init_db():
             VALUES (?, ?, ?)
         """, [
             (1, "pending", 0),
-            (2, "suspended", 0),
-            (3, "rejected", 0),
+            (2, "submitter", 1),
+            (3, "fulfiller", 1),
             (4, "admin", 2),
-            (5, "submitter", 1),
-            (6, "fulfiller", 1),
+            (5, "suspended", 0),
+            (6, "rejected", 0),
         ])
 
     conn.commit()
@@ -184,7 +184,7 @@ def get_role_key(conn, role_name):
 def user_exists_by_email(conn, user_id_lower):
     row = conn.execute(
         "SELECT 1 FROM login_auth WHERE LOWER(user_id) = ? LIMIT 1",
-        (user_id_lower,)
+        (user_id_lower,),
     ).fetchone()
     return row is not None
 
@@ -256,94 +256,6 @@ def user_status_text(user_key):
         return "Unknown"
     return ", ".join([r["role_name"].capitalize() for r in roles])
 
-def create_user_account(email, password):
-    email_clean = normalize_email(email)
-
-    conn = get_db()
-    try:
-        if not is_valid_email(email_clean):
-            return False, "Please enter a valid email address."
-
-        if user_exists_by_email(conn, email_clean):
-            return False, "That email address is already registered."
-
-        if not password_meets_rules(password):
-            return False, (
-                "Password must be at least 8 characters and include "
-                "1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character "
-                "from: ! - _ ( ) ."
-            )
-
-        role_name = first_user_role_name(conn)
-        role_key = get_role_key(conn, role_name)
-        if role_key is None:
-            raise RuntimeError(f"Role '{role_name}' not found.")
-
-        created_date = epoch_now()
-        role_date = epoch_now()
-        password_hash = generate_password_hash(password)
-
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO internal_account (created_date, role_date, last_login) VALUES (?, ?, ?)",
-            (created_date, role_date, None)
-        )
-        user_key = cur.lastrowid
-
-        cur.execute(
-            """
-            INSERT INTO login_auth (user_key, auth_provider, user_id, password_hash)
-            VALUES (?, ?, ?, ?)
-            """,
-            (user_key, "local", email_clean, password_hash)
-        )
-
-        cur.execute(
-            "INSERT INTO account_roles (user_key, role_key) VALUES (?, ?)",
-            (user_key, role_key)
-        )
-
-        conn.commit()
-        return True, user_key
-
-    except sqlite3.IntegrityError as e:
-        conn.rollback()
-        return False, f"Database integrity error: {e}"
-    except Exception as e:
-        conn.rollback()
-        return False, f"Error creating user: {e}"
-    finally:
-        conn.close()
-
-def authenticate_user(email, password):
-    email_clean = normalize_email(email)
-    conn = get_db()
-    try:
-        row = conn.execute("""
-            SELECT ia.user_key, ia.last_login, la.password_hash, la.user_id
-            FROM login_auth la
-            JOIN internal_account ia ON ia.user_key = la.user_key
-            WHERE LOWER(la.user_id) = ?
-            LIMIT 1
-        """, (email_clean,)).fetchone()
-
-        if not row:
-            return False, "Invalid login."
-
-        if not check_password_hash(row["password_hash"], password or ""):
-            return False, "Invalid login."
-
-        ts = epoch_now()
-        conn.execute(
-            "UPDATE internal_account SET last_login = ? WHERE user_key = ?",
-            (ts, row["user_key"])
-        )
-        conn.commit()
-        return True, row["user_key"]
-
-    finally:
-        conn.close()
-
 def get_timezones():
     return [
         "UTC",
@@ -395,7 +307,7 @@ def active_access_required(view):
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("user_profile"))
-        if effective_perm != 2 and effective_perm != 1:
+        if effective_perm not in (1, 2):
             return redirect(url_for("user_profile"))
 
         return view(*args, **kwargs)
@@ -447,10 +359,7 @@ def index():
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("user_profile"))
-        if effective_perm == 2:
-            flash("Login successful.")
-            return redirect(url_for("wo_current"))
-        if effective_perm == 1:
+        if effective_perm in (1, 2):
             flash("Login successful.")
             return redirect(url_for("wo_current"))
 
@@ -522,7 +431,7 @@ def wo_completed():
 def add():
     user = get_current_user()
     effective_perm = get_effective_role_perm(user["user_key"])
-    if effective_perm != 2 and effective_perm != 1:
+    if effective_perm not in (1, 2):
         return redirect(url_for("user_profile"))
 
     subject = request.form["subject"]
@@ -583,8 +492,8 @@ def update(wo_id):
                     needed = ?,
                     requested_by = ?,
                     last_update = ?
-                WHERE id = ? AND submitted = ?
-            """, (subject, body, room, needed, requested_by, ts, wo_id, existing["submitted"]))
+                WHERE id = ?
+            """, (subject, body, room, needed, requested_by, ts, wo_id))
         else:
             conn.execute("""
                 UPDATE workorders
@@ -611,6 +520,10 @@ def user_create():
         email = request.form.get("user_id", "")
         password = request.form.get("password", "")
         verify_password = request.form.get("verify_password", "")
+
+        if not is_valid_email(email):
+            flash("Please enter a valid email address.")
+            return redirect(url_for("user_create"))
 
         if password != verify_password:
             flash("Passwords do not match.")
@@ -717,28 +630,86 @@ def create_profile():
     finally:
         conn.close()
 
-@app.route("/user/me", methods=["GET", "POST"])
-@login_required
-def user_me():
-    return redirect(url_for("user_edit_self"))
+@app.route("/admin/users")
+@admin_required
+def admin_users():
+    conn = get_db()
+    try:
+        users = conn.execute("""
+            SELECT ia.user_key, la.user_id,
+                   COALESCE(pp.full_name, '') AS full_name,
+                   COALESCE(pp.display_name, '') AS display_name
+            FROM internal_account ia
+            JOIN login_auth la ON la.user_key = ia.user_key
+            LEFT JOIN profile_preferences pp ON pp.user_key = ia.user_key
+            ORDER BY
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM account_roles ar
+                        JOIN user_roles ur ON ur.role_key = ar.role_key
+                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'pending'
+                    ) THEN 1
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM account_roles ar
+                        JOIN user_roles ur ON ur.role_key = ar.role_key
+                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'submitter'
+                    ) THEN 2
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM account_roles ar
+                        JOIN user_roles ur ON ur.role_key = ar.role_key
+                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'fulfiller'
+                    ) THEN 3
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM account_roles ar
+                        JOIN user_roles ur ON ur.role_key = ar.role_key
+                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'admin'
+                    ) THEN 4
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM account_roles ar
+                        JOIN user_roles ur ON ur.role_key = ar.role_key
+                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'suspended'
+                    ) THEN 5
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM account_roles ar
+                        JOIN user_roles ur ON ur.role_key = ar.role_key
+                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'rejected'
+                    ) THEN 6
+                    ELSE 7
+                END,
+                la.user_id ASC
+        """).fetchall()
 
-@app.route("/user/edit", methods=["GET", "POST"])
-@login_required
-def user_edit_self():
-    return user_edit(get_current_user()["user_key"])
+        for u in users:
+            role_rows = conn.execute("""
+                SELECT ur.role_key, ur.role_name, ur.role_perm
+                FROM account_roles ar
+                JOIN user_roles ur ON ur.role_key = ar.role_key
+                WHERE ar.user_key = ?
+                ORDER BY ur.role_perm ASC, ur.role_name ASC
+            """, (u["user_key"],)).fetchall()
+            u["roles"] = role_rows
 
-@app.route("/user/edit/<int:user_key>", methods=["GET", "POST"])
-@login_required
-def user_edit(user_key):
-    current = get_current_user()
-    if not current or current["user_key"] != user_key:
-        flash("You cannot access another user's profile.")
-        return redirect(url_for("user_edit_self"))
+        return render_template(
+            "admin_users.html",
+            users=users,
+            **get_nav_context()
+        )
+    finally:
+        conn.close()
 
+@app.route("/admin/user/<int:user_key>", methods=["GET", "POST"])
+@admin_required
+def admin_user_edit(user_key):
     conn = get_db()
     try:
         user = conn.execute("""
-            SELECT ia.user_key, la.user_id, la.auth_provider
+            SELECT ia.user_key, la.user_id
             FROM internal_account ia
             JOIN login_auth la ON la.user_key = ia.user_key
             WHERE ia.user_key = ?
@@ -746,80 +717,11 @@ def user_edit(user_key):
 
         if not user:
             flash("User not found.")
-            return redirect(url_for("index"))
+            return redirect(url_for("admin_users"))
 
         prefs = conn.execute("""
             SELECT * FROM profile_preferences WHERE user_key = ?
         """, (user_key,)).fetchone()
-
-        roles = get_all_user_roles(user_key)
-        effective_perm = get_effective_role_perm(user_key)
-        status_text = user_status_text(user_key)
-
-        if request.method == "POST":
-            current_effective_perm = get_effective_role_perm(current["user_key"])
-
-            new_email = normalize_email(request.form.get("user_id", ""))
-            new_password = request.form.get("password", "")
-            verify_password = request.form.get("verify_password", "")
-            full_name = request.form.get("full_name", "").strip()
-            display_name = request.form.get("display_name", "").strip()
-            timezone = request.form.get("timezone", "").strip()
-            theme = request.form.get("theme", "").strip()
-            default_view = request.form.get("default_view", "").strip()
-
-            if current["user_key"] != user_key:
-                flash("You cannot edit another user's profile.")
-                return redirect(url_for("user_edit_self"))
-
-            if new_password or verify_password:
-                if new_password != verify_password:
-                    flash("Passwords do not match.")
-                    return redirect(url_for("user_edit_self"))
-                if not password_meets_rules(new_password):
-                    flash(
-                        "Password must be at least 8 characters and include "
-                        "1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character "
-                        "from: ! - _ ( ) ."
-                    )
-                    return redirect(url_for("user_edit_self"))
-
-                password_hash = generate_password_hash(new_password)
-                conn.execute("""
-                    UPDATE login_auth
-                    SET password_hash = ?
-                    WHERE user_key = ?
-                """, (password_hash, user_key))
-
-            if not all([full_name, display_name, timezone, theme, default_view]):
-                flash("All profile fields are required.")
-                return redirect(url_for("user_edit_self"))
-
-            if prefs:
-                conn.execute("""
-                    UPDATE profile_preferences
-                    SET full_name = ?, display_name = ?, timezone = ?, theme = ?, default_view = ?
-                    WHERE user_key = ?
-                """, (full_name, display_name, timezone, theme, default_view, user_key))
-            else:
-                conn.execute("""
-                    INSERT INTO profile_preferences
-                    (user_key, full_name, display_name, timezone, theme, default_view)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (user_key, full_name, display_name, timezone, theme, default_view))
-
-            if current_effective_perm == 2:
-                conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
-                role_keys = request.form.getlist("role_keys")
-                for role_key in role_keys:
-                    conn.execute(
-                        "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
-                        (user_key, role_key)
-                    )
-
-            conn.commit()
-            flash("User updated.")
-            return redirect(url_for("user_edit_self"))
 
         all_roles = conn.execute("""
             SELECT role_key, role_name, role_perm
@@ -827,17 +729,55 @@ def user_edit(user_key):
             ORDER BY role_perm ASC, role_name ASC
         """).fetchall()
 
-        assigned_role_keys = {int(r["role_key"]) for r in roles}
+        assigned_role_keys = {
+            int(r["role_key"])
+            for r in conn.execute(
+                "SELECT role_key FROM account_roles WHERE user_key = ?",
+                (user_key,)
+            ).fetchall()
+        }
+
+        if request.method == "POST":
+            full_name = request.form.get("full_name", "").strip()
+            display_name = request.form.get("display_name", "").strip()
+
+            if not all([full_name, display_name]):
+                flash("Full Name and Display Name are required.")
+                return redirect(url_for("admin_user_edit", user_key=user_key))
+
+            if prefs:
+                conn.execute("""
+                    UPDATE profile_preferences
+                    SET full_name = ?, display_name = ?
+                    WHERE user_key = ?
+                """, (full_name, display_name, user_key))
+            else:
+                conn.execute("""
+                    INSERT INTO profile_preferences
+                    (user_key, full_name, display_name, timezone, theme, default_view)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (user_key, full_name, display_name, "UTC", "light", "option1"))
+
+            conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
+
+            role_keys = request.form.getlist("role_keys")
+            for role_key in role_keys:
+                conn.execute(
+                    "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
+                    (user_key, role_key)
+                )
+
+            conn.commit()
+            flash("User updated.")
+            return redirect(url_for("admin_user_edit", user_key=user_key))
 
         return render_template(
-            "user_edit.html",
+            "admin_user_edit.html",
             user=user,
             prefs=prefs,
-            timezones=get_timezones(),
-            status_text=status_text,
             all_roles=all_roles,
             assigned_role_keys=assigned_role_keys,
-            effective_perm=effective_perm,
+            status_text=user_status_text(user_key),
             **get_nav_context()
         )
     finally:

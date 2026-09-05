@@ -3,7 +3,7 @@
     <p><a href="{{ url_for('wo_current') }}">Open Work Orders</a></p>
     <p><a href="{{ url_for('wo_create') }}">Create Work Order</a></p>
     <p><a href="{{ url_for('wo_completed') }}">Completed Work Orders</a></p>
-    <p><a href="{{ url_for('user_edit', user_key=current_user['user_key']) }}">User Profile</a></p>
+    <p><a href="{{ url_for('user_edit_self') }}">User Profile</a></p>
     <p><a href="{{ url_for('user_logout') }}">Logout</a></p>
   </h3>
 </nav>

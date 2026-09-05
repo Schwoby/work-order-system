@@ -40,11 +40,13 @@
   <fieldset>
     <legend>Theme</legend>
     <label>
-      <input type="radio" name="theme" value="light" {% if prefs and prefs['theme'] == 'light' %}checked{% endif %} required>
+      <input type="radio" name="theme" value="light"
+        {% if prefs and prefs['theme'] == 'light' %}checked{% elif not prefs %}checked{% endif %} required>
       Light
     </label>
     <label>
-      <input type="radio" name="theme" value="dark" {% if prefs and prefs['theme'] == 'dark' %}checked{% endif %}>
+      <input type="radio" name="theme" value="dark"
+        {% if prefs and prefs['theme'] == 'dark' %}checked{% endif %}>
       Dark
     </label>
   </fieldset>
@@ -52,7 +54,8 @@
   <fieldset>
     <legend>Default View</legend>
     <label>
-      <input type="radio" name="default_view" value="option1" {% if prefs and prefs['default_view'] == 'option1' %}checked{% endif %} required>
+      <input type="radio" name="default_view" value="option1"
+        {% if prefs and prefs['default_view'] == 'option1' %}checked{% elif not prefs %}checked{% endif %} required>
       Option 1
     </label>
     <label>

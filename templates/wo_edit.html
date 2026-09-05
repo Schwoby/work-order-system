@@ -34,7 +34,7 @@
     <textarea name="completion_text" rows="3" cols="60" class='left'>{{ wo['completion_text'] or '' }}</textarea>
   </label>
 
-  {% if effective_perm == 2 %}
+  {% if current_effective_perm == 2 %}
   <label><b>Completed:</b>
     <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %}>
   </label>

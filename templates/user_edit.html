@@ -10,7 +10,6 @@
 <h1>User Profile</h1>
 
 <p>Status: {{ status_text }}</p>
-<p>Effective Access Level: {{ effective_perm if effective_perm is not none else 'None' }}</p>
 
 {% with messages = get_flashed_messages() %}
   {% if messages %}
@@ -25,7 +24,7 @@
 <form method="post">
   <h2>Login Details</h2>
   <label>User Name:<br>
-    <input type="email" name="user_id" value="{{ user['user_id'] }}" required autocomplete="username" readonly>
+    <input type="email" name="user_id" value="{{ current_user['user_id'] }}" required autocomplete="username" readonly>
   </label>
 
   <label>New Password (leave blank to keep current):<br>
@@ -81,18 +80,6 @@
       Option 3
     </label>
   </fieldset>
-
-  {% if effective_perm == 2 %}
-  <h2>User Permissions</h2>
-  <p>Assigned Permissions:</p>
-  {% for role in all_roles %}
-    <label>
-      <input type="checkbox" name="role_keys" value="{{ role['role_key'] }}"
-        {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
-      {{ role['role_name'].capitalize() }} (perm {{ role['role_perm'] }})
-    </label><br>
-  {% endfor %}
-  {% endif %}
 
   <button type="submit">Save Changes</button>
 </form>

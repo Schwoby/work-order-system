@@ -55,9 +55,11 @@ User-defined notifications, including but not limited to:
 - submitters currently have full edit access to all fields for all open DBs.
 - submitters currently can edit Completion Notes. this is a field only fulfillers should have access to edit.
 - edit pages sill use the term save instead of update
+- rework of "Requested For / By:" for the WO submission will be needed
 
 ## Next Steps
 - add submitter field to DB for workorders table. this field should not be editable by anyone at any time, but should be visible as plain text.
+- submitters name should use the Display Name field
 
 ## Notes
 - Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.

@@ -659,7 +659,7 @@ def user_edit(user_key):
 
             conn.commit()
             flash("User updated.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("user_edit", user_key=user_key))
 
         return render_template(
             "user_edit.html",

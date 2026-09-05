@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Create Work Order</title>
+  <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Add New Work Order</h1>
+
+<form action="{{ url_for('add') }}" method="post">
+  <label>Subject:<br><input name="subject" required></label>
+  <label>Description:<br><textarea name="body" rows="4" cols="60" class='left' required></textarea></label>
+  <label>Area:<br><input name="room"></label>
+  <label>Date/Time Needed:</label>
+  <input type="date" id="needed_date"> <select id="needed_time"></select>
+  <input type="hidden" name="needed" id="needed">
+  <label>Requested For / By:<br><input name="requested_by"></label>
+  <button type="submit">Submit</button>
+</form>
+
+<div class="nav-links">
+  <p><a href="{{ url_for('wo_current') }}">Back to Open Work Orders</a></p>
+  <p><a href="{{ url_for('wo_completed') }}">View Completed Work Orders</a></p>
+  <p><a href="{{ url_for('user_profile') }}">User Profile</a></p>
+  <p><a href="{{ url_for('user_logout') }}">Logout</a></p>
+</div>
+
+<script>
+  // Populate the time dropdown with 15-minute increments in 12h format
+  const timeSelect = document.getElementById('needed_time');
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute of [0, 15, 30, 45]) {
+      const opt = document.createElement('option');
+      const hour12 = (hour % 12) || 12;
+      const ampm = hour < 12 ? 'AM' : 'PM';
+      const label = `${hour12}:${String(minute).padStart(2, '0')} ${ampm}`;
+      const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      opt.value = value;
+      opt.textContent = label;
+      timeSelect.appendChild(opt);
+    }
+  }
+
+  const form = document.querySelector('form');
+  const dateInput = document.getElementById('needed_date');
+  const hiddenField = document.getElementById('needed');
+
+  form.addEventListener('submit', () => {
+    if (dateInput.value && timeSelect.value) {
+      hiddenField.value = `${dateInput.value}T${timeSelect.value}`;
+    } else {
+      hiddenField.value = '';
+    }
+  });
+</script>
+
+<h4></h4>
+</body>
+</html>

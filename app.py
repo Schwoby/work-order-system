@@ -123,9 +123,9 @@ def init_db():
             (1, "pending", 0),
             (2, "suspended", 0),
             (3, "rejected", 0),
-            (4, "admin", 1),
-            (5, "submitter", 2),
-            (6, "fulfiller", 3),
+            (4, "admin", 2),
+            (5, "submitter", 1),
+            (6, "fulfiller", 1),
         ])
 
     conn.commit()
@@ -209,24 +209,31 @@ def get_current_user():
     finally:
         conn.close()
 
-def get_current_user_role():
-    user = get_current_user()
-    if not user:
-        return None
-
+def get_all_user_roles(user_key):
     conn = get_db()
     try:
-        row = conn.execute("""
+        rows = conn.execute("""
             SELECT ur.role_key, ur.role_name, ur.role_perm
             FROM account_roles ar
             JOIN user_roles ur ON ur.role_key = ar.role_key
             WHERE ar.user_key = ?
-            ORDER BY ur.role_key ASC
-            LIMIT 1
-        """, (user["user_key"],)).fetchone()
-        return row
+            ORDER BY ur.role_perm ASC, ur.role_name ASC
+        """, (user_key,)).fetchall()
+        return rows
     finally:
         conn.close()
+
+def get_effective_role_perm(user_key):
+    roles = get_all_user_roles(user_key)
+    perms = [int(r["role_perm"]) for r in roles]
+
+    if 0 in perms:
+        return 0
+    if 2 in perms:
+        return 2
+    if 1 in perms:
+        return 1
+    return None
 
 def user_profile_complete(user_key):
     conn = get_db()
@@ -240,38 +247,14 @@ def user_profile_complete(user_key):
         conn.close()
 
 def user_access_allowed(user_key):
-    conn = get_db()
-    try:
-        row = conn.execute("""
-            SELECT ur.role_perm
-            FROM account_roles ar
-            JOIN user_roles ur ON ur.role_key = ar.role_key
-            WHERE ar.user_key = ?
-            ORDER BY ur.role_key ASC
-            LIMIT 1
-        """, (user_key,)).fetchone()
-        if not row:
-            return False
-        return int(row["role_perm"]) > 0
-    finally:
-        conn.close()
+    effective_perm = get_effective_role_perm(user_key)
+    return effective_perm in (1, 2)
 
 def user_status_text(user_key):
-    conn = get_db()
-    try:
-        row = conn.execute("""
-            SELECT ur.role_name
-            FROM account_roles ar
-            JOIN user_roles ur ON ur.role_key = ar.role_key
-            WHERE ar.user_key = ?
-            ORDER BY ur.role_key ASC
-            LIMIT 1
-        """, (user_key,)).fetchone()
-        if not row:
-            return "Unknown"
-        return row["role_name"].capitalize()
-    finally:
-        conn.close()
+    roles = get_all_user_roles(user_key)
+    if not roles:
+        return "Unknown"
+    return ", ".join([r["role_name"].capitalize() for r in roles])
 
 def create_user_account(email, password):
     email_clean = normalize_email(email)
@@ -372,6 +355,14 @@ def get_timezones():
         "Europe/Paris",
     ]
 
+def get_nav_context():
+    user = get_current_user()
+    return {
+        "current_user": user,
+        "current_roles": get_all_user_roles(user["user_key"]) if user else [],
+        "current_effective_perm": get_effective_role_perm(user["user_key"]) if user else None,
+    }
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -380,14 +371,14 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-def onboarding_required(view):
+def profile_only_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         user = get_current_user()
         if not user:
             return redirect(url_for("index"))
         if not user_profile_complete(user["user_key"]):
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("create_profile"))
         return view(*args, **kwargs)
     return wrapped
 
@@ -398,9 +389,35 @@ def active_access_required(view):
         if not user:
             return redirect(url_for("index"))
         if not user_profile_complete(user["user_key"]):
+            return redirect(url_for("create_profile"))
+
+        effective_perm = get_effective_role_perm(user["user_key"])
+        if effective_perm == 0:
+            flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("user_profile"))
-        if not user_access_allowed(user["user_key"]):
-            return redirect(url_for("user_edit", user_key=user["user_key"]))
+        if effective_perm != 2 and effective_perm != 1:
+            return redirect(url_for("user_profile"))
+
+        return view(*args, **kwargs)
+    return wrapped
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return redirect(url_for("index"))
+        if not user_profile_complete(user["user_key"]):
+            return redirect(url_for("create_profile"))
+
+        effective_perm = get_effective_role_perm(user["user_key"])
+        if effective_perm == 0:
+            flash("Your account is blocked from accessing the work order system.")
+            return redirect(url_for("user_profile"))
+        if effective_perm != 2:
+            flash("Admin access required.")
+            return redirect(url_for("user_profile"))
+
         return view(*args, **kwargs)
     return wrapped
 
@@ -424,22 +441,36 @@ def index():
 
         session["user_key"] = result
         if not user_profile_complete(result):
+            return redirect(url_for("create_profile"))
+
+        effective_perm = get_effective_role_perm(result)
+        if effective_perm == 0:
+            flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("user_profile"))
-        if not user_access_allowed(result):
-            flash("Your account is pending, suspended, or rejected.")
-            return redirect(url_for("user_edit", user_key=result))
-        flash("Login successful.")
-        return redirect(url_for("wo_current"))
+        if effective_perm == 2:
+            flash("Login successful.")
+            return redirect(url_for("wo_current"))
+        if effective_perm == 1:
+            flash("Login successful.")
+            return redirect(url_for("wo_current"))
+
+        flash("Your account does not have access to the work order system.")
+        return redirect(url_for("user_profile"))
 
     if get_current_user():
         user = get_current_user()
         if not user_profile_complete(user["user_key"]):
-            return redirect(url_for("user_profile"))
-        if not user_access_allowed(user["user_key"]):
-            return redirect(url_for("user_edit", user_key=user["user_key"]))
-        return redirect(url_for("wo_current"))
+            return redirect(url_for("create_profile"))
 
-    return render_template("user_login.html", current_user=None)
+        effective_perm = get_effective_role_perm(user["user_key"])
+        if effective_perm == 0:
+            return redirect(url_for("user_profile"))
+        if effective_perm in (1, 2):
+            return redirect(url_for("wo_current"))
+
+        return redirect(url_for("user_profile"))
+
+    return render_template("user_login.html", **get_nav_context())
 
 @app.route("/wo/current")
 @active_access_required
@@ -466,13 +497,13 @@ def wo_current():
         workorders=wos,
         now=datetime.now(LOCAL_TZ),
         soon=datetime.now(LOCAL_TZ) + timedelta(hours=72),
-        current_user=get_current_user()
+        **get_nav_context()
     )
 
 @app.route("/wo/create")
 @active_access_required
 def wo_create():
-    return render_template("wo_create.html", current_user=get_current_user())
+    return render_template("wo_create.html", **get_nav_context())
 
 @app.route("/completed")
 @active_access_required
@@ -484,11 +515,16 @@ def wo_completed():
         ORDER BY last_update DESC
     """).fetchall()
     conn.close()
-    return render_template("wo_completed.html", workorders=wos, current_user=get_current_user())
+    return render_template("wo_completed.html", workorders=wos, **get_nav_context())
 
 @app.route("/add", methods=["POST"])
 @active_access_required
 def add():
+    user = get_current_user()
+    effective_perm = get_effective_role_perm(user["user_key"])
+    if effective_perm != 2 and effective_perm != 1:
+        return redirect(url_for("user_profile"))
+
     subject = request.form["subject"]
     body = request.form["body"]
     room = request.form.get("room")
@@ -513,11 +549,14 @@ def wo_edit(wo_id):
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
     conn.close()
-    return render_template("wo_edit.html", wo=wo, current_user=get_current_user())
+    return render_template("wo_edit.html", wo=wo, **get_nav_context())
 
 @app.route("/update/<int:wo_id>", methods=["POST"])
 @active_access_required
 def update(wo_id):
+    user = get_current_user()
+    effective_perm = get_effective_role_perm(user["user_key"])
+
     completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]
     body = request.form["body"]
@@ -529,22 +568,42 @@ def update(wo_id):
     ts = now_local_str()
 
     conn = get_db()
-    conn.execute("""
-        UPDATE workorders
-        SET subject = ?,
-            body = ?,
-            room = ?,
-            needed = ?,
-            requested_by = ?,
-            completion_text = ?,
-            completed = ?,
-            last_update = ?
-        WHERE id = ?
-    """, (subject, body, room, needed, requested_by,
-          completion_text, completed, ts, wo_id))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("wo_current"))
+    try:
+        existing = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
+        if not existing:
+            flash("Work order not found.")
+            return redirect(url_for("wo_current"))
+
+        if effective_perm == 1:
+            conn.execute("""
+                UPDATE workorders
+                SET subject = ?,
+                    body = ?,
+                    room = ?,
+                    needed = ?,
+                    requested_by = ?,
+                    last_update = ?
+                WHERE id = ? AND submitted = ?
+            """, (subject, body, room, needed, requested_by, ts, wo_id, existing["submitted"]))
+        else:
+            conn.execute("""
+                UPDATE workorders
+                SET subject = ?,
+                    body = ?,
+                    room = ?,
+                    needed = ?,
+                    requested_by = ?,
+                    completion_text = ?,
+                    completed = ?,
+                    last_update = ?
+                WHERE id = ?
+            """, (subject, body, room, needed, requested_by,
+                  completion_text, completed, ts, wo_id))
+
+        conn.commit()
+        return redirect(url_for("wo_current"))
+    finally:
+        conn.close()
 
 @app.route("/user/create", methods=["GET", "POST"])
 def user_create():
@@ -565,13 +624,19 @@ def user_create():
         session["user_key"] = result
         if not user_profile_complete(result):
             return redirect(url_for("create_profile"))
-        if not user_access_allowed(result):
-            flash("Your account is pending, suspended, or rejected.")
-            return redirect(url_for("user_edit", user_key=result))
-        flash("Account created successfully.")
-        return redirect(url_for("wo_current"))
 
-    return render_template("user_create.html", current_user=None)
+        effective_perm = get_effective_role_perm(result)
+        if effective_perm == 0:
+            flash("Your account is blocked from accessing the work order system.")
+            return redirect(url_for("user_profile"))
+        if effective_perm in (1, 2):
+            flash("Account created successfully.")
+            return redirect(url_for("wo_current"))
+
+        flash("Account created, but no work order access is available.")
+        return redirect(url_for("user_profile"))
+
+    return render_template("user_create.html", **get_nav_context())
 
 @app.route("/user/logout")
 @login_required
@@ -582,10 +647,6 @@ def user_logout():
 @app.route("/user/profile", methods=["GET", "POST"])
 @login_required
 def user_profile():
-    user = get_current_user()
-    if not user:
-        return redirect(url_for("index"))
-
     return redirect(url_for("create_profile"))
 
 @app.route("/profile/create", methods=["GET", "POST"])
@@ -628,12 +689,17 @@ def create_profile():
 
             conn.commit()
 
-            if not user_access_allowed(user["user_key"]):
-                flash(f"Profile saved, but your account status is {user_status_text(user['user_key'])}.")
-                return redirect(url_for("user_edit", user_key=user["user_key"]))
+            effective_perm = get_effective_role_perm(user["user_key"])
+            if effective_perm == 0:
+                flash("Profile saved, but your account is blocked from the work order system.")
+                return redirect(url_for("user_profile"))
+
+            if effective_perm in (1, 2):
+                flash("Profile saved.")
+                return redirect(url_for("wo_current"))
 
             flash("Profile saved.")
-            return redirect(url_for("wo_current"))
+            return redirect(url_for("user_profile"))
 
         prefs = None
         if existing:
@@ -643,16 +709,32 @@ def create_profile():
 
         return render_template(
             "create_profile.html",
-            current_user=user,
             prefs=prefs,
-            timezones=get_timezones()
+            timezones=get_timezones(),
+            status_text=user_status_text(user["user_key"]),
+            **get_nav_context()
         )
     finally:
         conn.close()
 
+@app.route("/user/me", methods=["GET", "POST"])
+@login_required
+def user_me():
+    return redirect(url_for("user_edit_self"))
+
+@app.route("/user/edit", methods=["GET", "POST"])
+@login_required
+def user_edit_self():
+    return user_edit(get_current_user()["user_key"])
+
 @app.route("/user/edit/<int:user_key>", methods=["GET", "POST"])
 @login_required
 def user_edit(user_key):
+    current = get_current_user()
+    if not current or current["user_key"] != user_key:
+        flash("You cannot access another user's profile.")
+        return redirect(url_for("user_edit_self"))
+
     conn = get_db()
     try:
         user = conn.execute("""
@@ -670,9 +752,13 @@ def user_edit(user_key):
             SELECT * FROM profile_preferences WHERE user_key = ?
         """, (user_key,)).fetchone()
 
+        roles = get_all_user_roles(user_key)
+        effective_perm = get_effective_role_perm(user_key)
         status_text = user_status_text(user_key)
 
         if request.method == "POST":
+            current_effective_perm = get_effective_role_perm(current["user_key"])
+
             new_email = normalize_email(request.form.get("user_id", ""))
             new_password = request.form.get("password", "")
             verify_password = request.form.get("verify_password", "")
@@ -682,17 +768,21 @@ def user_edit(user_key):
             theme = request.form.get("theme", "").strip()
             default_view = request.form.get("default_view", "").strip()
 
+            if current["user_key"] != user_key:
+                flash("You cannot edit another user's profile.")
+                return redirect(url_for("user_edit_self"))
+
             if new_password or verify_password:
                 if new_password != verify_password:
                     flash("Passwords do not match.")
-                    return redirect(url_for("user_edit", user_key=user_key))
+                    return redirect(url_for("user_edit_self"))
                 if not password_meets_rules(new_password):
                     flash(
                         "Password must be at least 8 characters and include "
                         "1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character "
                         "from: ! - _ ( ) ."
                     )
-                    return redirect(url_for("user_edit", user_key=user_key))
+                    return redirect(url_for("user_edit_self"))
 
                 password_hash = generate_password_hash(new_password)
                 conn.execute("""
@@ -700,11 +790,10 @@ def user_edit(user_key):
                     SET password_hash = ?
                     WHERE user_key = ?
                 """, (password_hash, user_key))
-                password_hash = None
 
             if not all([full_name, display_name, timezone, theme, default_view]):
                 flash("All profile fields are required.")
-                return redirect(url_for("user_edit", user_key=user_key))
+                return redirect(url_for("user_edit_self"))
 
             if prefs:
                 conn.execute("""
@@ -719,22 +808,37 @@ def user_edit(user_key):
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (user_key, full_name, display_name, timezone, theme, default_view))
 
+            if current_effective_perm == 2:
+                conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
+                role_keys = request.form.getlist("role_keys")
+                for role_key in role_keys:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
+                        (user_key, role_key)
+                    )
+
             conn.commit()
-
-            if not user_access_allowed(user_key):
-                flash(f"User updated. Current status: {status_text}.")
-                return redirect(url_for("user_edit", user_key=user_key))
-
             flash("User updated.")
-            return redirect(url_for("user_edit", user_key=user_key))
+            return redirect(url_for("user_edit_self"))
+
+        all_roles = conn.execute("""
+            SELECT role_key, role_name, role_perm
+            FROM user_roles
+            ORDER BY role_perm ASC, role_name ASC
+        """).fetchall()
+
+        assigned_role_keys = {int(r["role_key"]) for r in roles}
 
         return render_template(
             "user_edit.html",
-            current_user=get_current_user(),
             user=user,
             prefs=prefs,
             timezones=get_timezones(),
-            status_text=status_text
+            status_text=status_text,
+            all_roles=all_roles,
+            assigned_role_keys=assigned_role_keys,
+            effective_perm=effective_perm,
+            **get_nav_context()
         )
     finally:
         conn.close()

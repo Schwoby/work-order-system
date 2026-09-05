@@ -42,7 +42,7 @@
       <input type="checkbox" name="role_keys" value="{{ role['role_key'] }}"
         {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
       {{ role['role_name'].capitalize() }} (perm {{ role['role_perm'] }})
-    </label><br>
+    </label>
   {% endfor %}
 
   <button type="submit">Save Changes</button>

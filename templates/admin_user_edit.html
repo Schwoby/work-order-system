@@ -37,18 +37,107 @@
   </label>
 
   <h2>User Permissions</h2>
-  {% for role in all_roles %}
-    <label>
-      <input type="checkbox" name="role_keys" value="{{ role['role_key'] }}"
-        {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
-      {{ role['role_name'].capitalize() }} (perm {{ role['role_perm'] }})
-    </label>
-  {% endfor %}
+  <div id="perm-group">
+    <label><input type="radio" name="role_radio" value="pending"> Pending</label><br>
+    <label><input type="radio" name="role_radio" value="rejected"> Rejected</label><br>
+    <label><input type="radio" name="role_radio" value="suspended"> Suspended</label><br>
+    <label><input type="checkbox" name="role_check" value="fulfiller"> Fulfiller</label><br>
+    <label><input type="checkbox" name="role_check" value="submitter"> Submitter</label><br>
+    <label><input type="radio" name="role_radio" value="admin"> Admin</label><br>
+  </div>
 
   <button type="submit">Save Changes</button>
 </form>
 
 {% include "_nav.html" %}
+
+<script>
+  const roleMap = {
+    pending: "{{ all_roles|selectattr('role_name', 'equalto', 'pending')|map(attribute='role_key')|list|first if all_roles else '' }}",
+    rejected: "{{ all_roles|selectattr('role_name', 'equalto', 'rejected')|map(attribute='role_key')|list|first if all_roles else '' }}",
+    suspended: "{{ all_roles|selectattr('role_name', 'equalto', 'suspended')|map(attribute='role_key')|list|first if all_roles else '' }}",
+    fulfiller: "{{ all_roles|selectattr('role_name', 'equalto', 'fulfiller')|map(attribute='role_key')|list|first if all_roles else '' }}",
+    submitter: "{{ all_roles|selectattr('role_name', 'equalto', 'submitter')|map(attribute='role_key')|list|first if all_roles else '' }}",
+    admin: "{{ all_roles|selectattr('role_name', 'equalto', 'admin')|map(attribute='role_key')|list|first if all_roles else '' }}"
+  };
+
+  const assigned = new Set({{ assigned_role_keys | list | tojson }});
+
+  const radios = document.querySelectorAll('input[type="radio"][name="role_radio"]');
+  const checks = document.querySelectorAll('input[type="checkbox"][name="role_check"]');
+
+  function syncUI() {
+    const selectedRadio = document.querySelector('input[name="role_radio"]:checked');
+    const selectedChecks = Array.from(checks).filter(cb => cb.checked);
+
+    if (selectedRadio && selectedRadio.value === 'admin') {
+      checks.forEach(cb => cb.checked = false);
+    }
+
+    if (selectedChecks.length > 0 && selectedRadio && ['pending', 'rejected', 'suspended'].includes(selectedRadio.value)) {
+      radios.forEach(r => {
+        if (r.value === selectedRadio.value) r.checked = false;
+      });
+    }
+
+    if (selectedRadio && ['pending', 'rejected', 'suspended', 'admin'].includes(selectedRadio.value)) {
+      if (selectedRadio.value !== 'admin' && selectedChecks.length > 0) {
+        // if a checkbox is selected after a status radio, clear the status radio
+        radios.forEach(r => {
+          if (r.value === selectedRadio.value) r.checked = false;
+        });
+      }
+    }
+  }
+
+  radios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.value === 'admin') {
+        checks.forEach(cb => cb.checked = false);
+      } else {
+        checks.forEach(cb => cb.checked = false);
+      }
+    });
+  });
+
+  checks.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const anyChecked = Array.from(checks).some(x => x.checked);
+      if (anyChecked) {
+        radios.forEach(r => {
+          if (['pending', 'rejected', 'suspended', 'admin'].includes(r.value)) {
+            r.checked = false;
+          }
+        });
+      }
+    });
+  });
+
+  // Preselect based on assigned roles
+  document.addEventListener('DOMContentLoaded', () => {
+    const assignedList = {{ assigned_role_keys | list | tojson }};
+    const selectedNames = {
+      {% for role in all_roles %}
+        "{{ role['role_key'] }}": "{{ role['role_name'] }}"{% if not loop.last %},{% endif %}
+      {% endfor %}
+    };
+
+    for (const key of assignedList) {
+      const name = selectedNames[String(key)];
+      if (!name) continue;
+
+      if (name === 'pending' || name === 'rejected' || name === 'suspended' || name === 'admin') {
+        const radio = document.querySelector(`input[type="radio"][value="${name}"]`);
+        if (radio) radio.checked = true;
+      } else {
+        const cb = document.querySelector(`input[type="checkbox"][value="${name}"]`);
+        if (cb) cb.checked = true;
+      }
+    }
+
+    syncUI();
+  });
+</script>
 
 </body>
 </html>

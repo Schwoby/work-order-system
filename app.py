@@ -839,12 +839,16 @@ def admin_user_edit(user_key):
 
             conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
 
-            status_roles = {"pending", "rejected", "suspended", "admin"}
-            access_roles = {"submitter", "fulfiller"}
+            status_role = request.form.get("status_role", "").strip()
+            access_roles = request.form.getlist("access_roles")
 
-            selected_roles = request.form.getlist("role_keys")
+            if status_role:
+                conn.execute(
+                    "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
+                    (user_key, status_role)
+                )
 
-            for role_key in selected_roles:
+            for role_key in access_roles:
                 conn.execute(
                     "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
                     (user_key, role_key)

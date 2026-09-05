@@ -22,7 +22,7 @@
 <form method="post">
   <h2>Login Details</h2>
   <label>Email Address:<br>
-    <input type="email" name="user_id" value="{{ user['user_id'] }}" required autocomplete="username">
+    <input type="email" name="user_id" value="{{ user['user_id'] }}" required autocomplete="username" readonly>
   </label>
 
   <label>New Password (leave blank to keep current):<br>
@@ -83,5 +83,8 @@
 </form>
 
 {% include "_nav.html" %}
+
+<p>&nbsp;</p>
+<h4></h4>
 </body>
 </html>

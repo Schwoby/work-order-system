@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import sqlite3
 from datetime import datetime
 from functools import wraps
 from zoneinfo import ZoneInfo
@@ -154,7 +155,7 @@ def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if not get_current_user():
-            return redirect(url_for("index"))
+            return redirect(url_for("users.index"))
         return view(*args, **kwargs)
     return wrapped
 
@@ -163,16 +164,16 @@ def active_access_required(view):
     def wrapped(*args, **kwargs):
         user = get_current_user()
         if not user:
-            return redirect(url_for("index"))
+            return redirect(url_for("users.index"))
         if not user_profile_complete(user["user_key"]):
-            return redirect(url_for("create_profile"))
+            return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
         if effective_perm not in (1, 2):
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
 
         return view(*args, **kwargs)
     return wrapped
@@ -182,17 +183,17 @@ def admin_required(view):
     def wrapped(*args, **kwargs):
         user = get_current_user()
         if not user:
-            return redirect(url_for("index"))
+            return redirect(url_for("users.index"))
         if not user_profile_complete(user["user_key"]):
-            return redirect(url_for("create_profile"))
+            return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
         if effective_perm != 2:
             flash("Admin access required.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
 
         return view(*args, **kwargs)
     return wrapped

@@ -57,7 +57,7 @@ def add():
     user = get_current_user()
     effective_perm = get_effective_role_perm(user["user_key"])
     if effective_perm not in (1, 2):
-        return redirect(url_for("user_profile"))
+        return redirect(url_for("users.user_profile"))
 
     subject = request.form["subject"]
     body = request.form["body"]
@@ -75,7 +75,7 @@ def add():
     """, (subject, body, room, needed, requested_by, now_local, now_local))
     conn.commit()
     conn.close()
-    return redirect(url_for("wo_current"))
+    return redirect(url_for("workorders.wo_current"))
 
 @workorders_bp.route("/edit/<int:wo_id>")
 @active_access_required
@@ -106,7 +106,7 @@ def update(wo_id):
         existing = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
         if not existing:
             flash("Work order not found.")
-            return redirect(url_for("wo_current"))
+            return redirect(url_for("workorders.wo_current"))
 
         if effective_perm == 1:
             conn.execute("""
@@ -135,6 +135,6 @@ def update(wo_id):
                   completion_text, completed, ts, wo_id))
 
         conn.commit()
-        return redirect(url_for("wo_current"))
+        return redirect(url_for("workorders.wo_current"))
     finally:
         conn.close()

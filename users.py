@@ -36,7 +36,7 @@ def index():
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("users.user_profile"))
-        if effective_perm in (1, 2):
+        if effective_perm in (1, 2, 3):
             flash("Login successful.")
             return redirect(url_for("workorders.wo_current"))
 
@@ -51,7 +51,7 @@ def index():
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
             return redirect(url_for("users.user_profile"))
-        if effective_perm in (1, 2):
+        if effective_perm in (1, 2, 3):
             return redirect(url_for("workorders.wo_current"))
 
         return redirect(url_for("users.user_profile"))
@@ -86,7 +86,7 @@ def user_create():
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("users.user_profile"))
-        if effective_perm in (1, 2):
+        if effective_perm in (1, 2, 3):
             flash("Account created successfully.")
             return redirect(url_for("workorders.wo_current"))
 
@@ -151,7 +151,7 @@ def create_profile():
                 flash("Profile saved, but your account is blocked from the work order system.")
                 return redirect(url_for("users.user_profile"))
 
-            if effective_perm in (1, 2):
+            if effective_perm in (1, 2, 3):
                 flash("Profile saved.")
                 return redirect(url_for("workorders.wo_current"))
 
@@ -186,47 +186,7 @@ def admin_users():
             FROM internal_account ia
             JOIN login_auth la ON la.user_key = ia.user_key
             LEFT JOIN profile_preferences pp ON pp.user_key = ia.user_key
-            ORDER BY
-                CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM account_roles ar
-                        JOIN user_roles ur ON ur.role_key = ar.role_key
-                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'pending'
-                    ) THEN 1
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM account_roles ar
-                        JOIN user_roles ur ON ur.role_key = ar.role_key
-                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'submitter'
-                    ) THEN 2
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM account_roles ar
-                        JOIN user_roles ur ON ur.role_key = ar.role_key
-                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'fulfiller'
-                    ) THEN 3
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM account_roles ar
-                        JOIN user_roles ur ON ur.role_key = ar.role_key
-                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'admin'
-                    ) THEN 4
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM account_roles ar
-                        JOIN user_roles ur ON ur.role_key = ar.role_key
-                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'suspended'
-                    ) THEN 5
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM account_roles ar
-                        JOIN user_roles ur ON ur.role_key = ar.role_key
-                        WHERE ar.user_key = ia.user_key AND ur.role_name = 'rejected'
-                    ) THEN 6
-                    ELSE 7
-                END,
-                la.user_id ASC
+            ORDER BY la.user_id ASC
         """).fetchall()
 
         users = []
@@ -307,18 +267,10 @@ def admin_user_edit(user_key):
             conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
 
             status_role = request.form.get("status_role", "").strip()
-            access_roles = request.form.getlist("access_roles")
-
             if status_role:
                 conn.execute(
                     "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
                     (user_key, status_role)
-                )
-
-            for role_key in access_roles:
-                conn.execute(
-                    "INSERT OR IGNORE INTO account_roles (user_key, role_key) VALUES (?, ?)",
-                    (user_key, role_key)
                 )
 
             conn.commit()

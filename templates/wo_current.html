@@ -26,7 +26,7 @@
   <tbody>
   {% for wo in workorders %}
     <tr class="{% if wo['needed'] and wo['needed'] <= now.strftime('%Y-%m-%dT%H:%M') %}overdue{% elif wo['needed'] and wo['needed'] <= soon.strftime('%Y-%m-%dT%H:%M') %}due{% endif %}">
-      <td><a href="{{ url_for('wo_edit', wo_id=wo['id']) }}">{{ wo['id'] }}</a></td>
+      <td><a href="{{ url_for('workorders.wo_edit', wo_id=wo['id']) }}">{{ wo['id'] }}</a></td>
       <td class='left cap'>{{ wo['subject'] }}</td>
       <td class='left capfirst'>{{ wo['body'] }}</td>
       <td class='cap'>{{ wo['room'] or '' }}</td>

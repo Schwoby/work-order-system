@@ -275,7 +275,7 @@ def admin_user_edit(user_key):
 
             conn.commit()
             flash("User updated.")
-            return redirect(url_for("users.admin_user_edit", user_key=user_key))
+            return redirect(url_for("users.admin_users"))
 
         return render_template(
             "admin_user_edit.html",

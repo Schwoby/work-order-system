@@ -72,10 +72,6 @@
     accessChecks.forEach(c => c.checked = false);
   }
 
-  function getSelectedStatus() {
-    return statusRadios.find(r => r.checked) || null;
-  }
-
   statusRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       if (radio.checked) {

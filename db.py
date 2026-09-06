@@ -86,8 +86,8 @@ def init_db():
         """, [
             (1, "pending", 0),
             (2, "submitter", 1),
-            (3, "fulfiller", 1),
-            (4, "admin", 2),
+            (3, "fulfiller", 2),
+            (4, "admin", 3),
             (5, "suspended", 0),
             (6, "rejected", 0),
         ])

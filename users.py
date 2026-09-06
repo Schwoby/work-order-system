@@ -237,7 +237,7 @@ def admin_users():
                 FROM account_roles ar
                 JOIN user_roles ur ON ur.role_key = ar.role_key
                 WHERE ar.user_key = ?
-                ORDER BY ur.role_perm ASC, ur.role_name ASC
+                ORDER BY ur.role_key ASC
             """, (row["user_key"],)).fetchall()
             users.append(user_dict)
 
@@ -272,7 +272,7 @@ def admin_user_edit(user_key):
         all_roles = conn.execute("""
             SELECT role_key, role_name, role_perm
             FROM user_roles
-            ORDER BY role_perm ASC, role_name ASC
+            ORDER BY role_key ASC
         """).fetchall()
 
         assigned_role_keys = {

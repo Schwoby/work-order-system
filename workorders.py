@@ -56,7 +56,7 @@ def wo_completed():
 def add():
     user = get_current_user()
     effective_perm = get_effective_role_perm(user["user_key"])
-    if effective_perm not in (1, 2):
+    if effective_perm not in (1, 2, 3):
         return redirect(url_for("users.user_profile"))
 
     subject = request.form["subject"]

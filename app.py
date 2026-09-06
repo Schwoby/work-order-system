@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 from flask import Flask
 
 from db import init_db
@@ -15,6 +17,26 @@ app.register_blueprint(workorders_bp)
 
 os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
 init_db()
+
+@app.template_filter("format_needed_date")
+def format_needed_date(value):
+    if not value:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(value).replace("T", " "))
+        return dt.strftime("%m/%d/%Y")
+    except Exception:
+        return str(value)
+
+@app.template_filter("format_needed_time")
+def format_needed_time(value):
+    if not value:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(value).replace("T", " "))
+        return dt.strftime("%I:%M %p").lstrip("0")
+    except Exception:
+        return ""
 
 @app.route("/healthz")
 def healthz():

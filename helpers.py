@@ -22,7 +22,7 @@ def env_bool(name, default=False):
 # LOCAL TIMEZONE DETECTION
 # ----------------------------------------------------------------------
 try:
-    LOCAL_TZ = ZoneInfo.local()  # Available in Python 3.13+
+    LOCAL_TZ = ZoneInfo.local()
 except AttributeError:
     tz_name = os.environ.get("TZ")
     LOCAL_TZ = ZoneInfo(tz_name) if tz_name else ZoneInfo("UTC")
@@ -93,7 +93,7 @@ def get_all_user_roles(user_key):
             FROM account_roles ar
             JOIN user_roles ur ON ur.role_key = ar.role_key
             WHERE ar.user_key = ?
-            ORDER BY ur.role_perm ASC, ur.role_name ASC
+            ORDER BY ur.role_key ASC
         """, (user_key,)).fetchall()
         return rows
     finally:
@@ -105,6 +105,8 @@ def get_effective_role_perm(user_key):
 
     if 0 in perms:
         return 0
+    if 3 in perms:
+        return 3
     if 2 in perms:
         return 2
     if 1 in perms:
@@ -124,7 +126,7 @@ def user_profile_complete(user_key):
 
 def user_access_allowed(user_key):
     effective_perm = get_effective_role_perm(user_key)
-    return effective_perm in (1, 2)
+    return effective_perm in (1, 2, 3)
 
 def user_status_text(user_key):
     roles = get_all_user_roles(user_key)
@@ -169,10 +171,8 @@ def active_access_required(view):
             return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(user["user_key"])
-        if effective_perm == 0:
+        if effective_perm == 0 or effective_perm is None:
             flash("Your account is blocked from accessing the work order system.")
-            return redirect(url_for("users.user_profile"))
-        if effective_perm not in (1, 2):
             return redirect(url_for("users.user_profile"))
 
         return view(*args, **kwargs)
@@ -188,10 +188,10 @@ def admin_required(view):
             return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(user["user_key"])
-        if effective_perm == 0:
+        if effective_perm == 0 or effective_perm is None:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("users.user_profile"))
-        if effective_perm != 2:
+        if effective_perm != 3:
             flash("Admin access required.")
             return redirect(url_for("users.user_profile"))
 

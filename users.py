@@ -26,35 +26,35 @@ def index():
         success, result = authenticate_user(email, password)
         if not success:
             flash(str(result))
-            return redirect(url_for("index"))
+            return redirect(url_for("users.index"))
 
         session["user_key"] = result
         if not user_profile_complete(result):
-            return redirect(url_for("create_profile"))
+            return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(result)
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2):
             flash("Login successful.")
-            return redirect(url_for("wo_current"))
+            return redirect(url_for("workorders.wo_current"))
 
         flash("Your account does not have access to the work order system.")
-        return redirect(url_for("user_profile"))
+        return redirect(url_for("users.user_profile"))
 
     if get_current_user():
         user = get_current_user()
         if not user_profile_complete(user["user_key"]):
-            return redirect(url_for("create_profile"))
+            return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2):
-            return redirect(url_for("wo_current"))
+            return redirect(url_for("workorders.wo_current"))
 
-        return redirect(url_for("user_profile"))
+        return redirect(url_for("users.user_profile"))
 
     return render_template("user_login.html", **get_nav_context())
 
@@ -67,31 +67,31 @@ def user_create():
 
         if not is_valid_email(email):
             flash("Please enter a valid email address.")
-            return redirect(url_for("user_create"))
+            return redirect(url_for("users.user_create"))
 
         if password != verify_password:
             flash("Passwords do not match.")
-            return redirect(url_for("user_create"))
+            return redirect(url_for("users.user_create"))
 
         success, result = create_user_account(email, password)
         if not success:
             flash(str(result))
-            return redirect(url_for("user_create"))
+            return redirect(url_for("users.user_create"))
 
         session["user_key"] = result
         if not user_profile_complete(result):
-            return redirect(url_for("create_profile"))
+            return redirect(url_for("users.create_profile"))
 
         effective_perm = get_effective_role_perm(result)
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2):
             flash("Account created successfully.")
-            return redirect(url_for("wo_current"))
+            return redirect(url_for("workorders.wo_current"))
 
         flash("Account created, but no work order access is available.")
-        return redirect(url_for("user_profile"))
+        return redirect(url_for("users.user_profile"))
 
     return render_template("user_create.html", **get_nav_context())
 
@@ -99,19 +99,19 @@ def user_create():
 @login_required
 def user_logout():
     session.clear()
-    return redirect(url_for("index"))
+    return redirect(url_for("users.index"))
 
 @users_bp.route("/user/profile", methods=["GET", "POST"])
 @login_required
 def user_profile():
-    return redirect(url_for("create_profile"))
+    return redirect(url_for("users.create_profile"))
 
 @users_bp.route("/profile/create", methods=["GET", "POST"])
 @login_required
 def create_profile():
     user = get_current_user()
     if not user:
-        return redirect(url_for("index"))
+        return redirect(url_for("users.index"))
 
     conn = get_db()
     try:
@@ -129,7 +129,7 @@ def create_profile():
 
             if not all([full_name, display_name, timezone, theme, default_view]):
                 flash("All profile fields are required.")
-                return redirect(url_for("create_profile"))
+                return redirect(url_for("users.create_profile"))
 
             if existing:
                 conn.execute("""
@@ -149,14 +149,14 @@ def create_profile():
             effective_perm = get_effective_role_perm(user["user_key"])
             if effective_perm == 0:
                 flash("Profile saved, but your account is blocked from the work order system.")
-                return redirect(url_for("user_profile"))
+                return redirect(url_for("users.user_profile"))
 
             if effective_perm in (1, 2):
                 flash("Profile saved.")
-                return redirect(url_for("wo_current"))
+                return redirect(url_for("workorders.wo_current"))
 
             flash("Profile saved.")
-            return redirect(url_for("user_profile"))
+            return redirect(url_for("users.user_profile"))
 
         prefs = None
         if existing:
@@ -263,7 +263,7 @@ def admin_user_edit(user_key):
 
         if not user:
             flash("User not found.")
-            return redirect(url_for("admin_users"))
+            return redirect(url_for("users.admin_users"))
 
         prefs = conn.execute("""
             SELECT * FROM profile_preferences WHERE user_key = ?
@@ -289,7 +289,7 @@ def admin_user_edit(user_key):
 
             if not all([full_name, display_name]):
                 flash("Full Name and Display Name are required.")
-                return redirect(url_for("admin_user_edit", user_key=user_key))
+                return redirect(url_for("users.admin_user_edit", user_key=user_key))
 
             if prefs:
                 conn.execute("""
@@ -323,7 +323,7 @@ def admin_user_edit(user_key):
 
             conn.commit()
             flash("User updated.")
-            return redirect(url_for("admin_user_edit", user_key=user_key))
+            return redirect(url_for("users.admin_user_edit", user_key=user_key))
 
         return render_template(
             "admin_user_edit.html",

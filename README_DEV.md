@@ -49,6 +49,8 @@ User-defined notifications, including but not limited to:
 - implemented new user creation gui
 - implemented user management gui for admins
 - refactored app.py
+- updated pages to load refactored pages
+- updated user roles to ladder permission format
 
 ## Known Issues
 - proposed solution - Further feature expansion can make submitter and fulfiller roles too broad of roles
@@ -66,5 +68,5 @@ User-defined notifications, including but not limited to:
 - Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
 - The volumes for templates and static kept the files from being updated at time of update.
 - Google account integration requires each installation to have it's own OAuth setup, which is more than i want to support at this point. may approach at a later date.
-- User management will be the end of v0.2; user integration into system will be v0.3 and notifications will be v0.4
+- User management will be the end of v0.2; user integration into system will be v0.3 and notifications and dark mode will be v0.4
 - fixed - profile edit for other users can happen by changing URL profile user number

@@ -39,19 +39,11 @@
   <h2>User Permissions</h2>
   <div id="perm-group">
     {% for role in all_roles %}
-      {% if role['role_perm'] == 1 %}
-        <label>
-          <input type="checkbox" name="access_roles" value="{{ role['role_key'] }}"
-                 {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
-          {{ role['role_name']|capitalize }}
-        </label>
-      {% else %}
-        <label>
-          <input type="radio" name="status_role" value="{{ role['role_key'] }}"
-                 {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
-          {{ role['role_name']|capitalize }}
-        </label>
-      {% endif %}
+      <label>
+        <input type="radio" name="status_role" value="{{ role['role_key'] }}"
+               {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
+        {{ role['role_name']|capitalize }}
+      </label>
     {% endfor %}
   </div>
 
@@ -59,35 +51,6 @@
 </form>
 
 {% include "_nav.html" %}
-
-<script>
-  const statusRadios = Array.from(document.querySelectorAll('input[name="status_role"]'));
-  const accessChecks = Array.from(document.querySelectorAll('input[name="access_roles"]'));
-
-  function clearStatusRadios() {
-    statusRadios.forEach(r => r.checked = false);
-  }
-
-  function clearAccessChecks() {
-    accessChecks.forEach(c => c.checked = false);
-  }
-
-  statusRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (radio.checked) {
-        clearAccessChecks();
-      }
-    });
-  });
-
-  accessChecks.forEach(check => {
-    check.addEventListener('change', () => {
-      if (check.checked) {
-        clearStatusRadios();
-      }
-    });
-  });
-</script>
 
 </body>
 </html>

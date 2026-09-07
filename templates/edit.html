@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Edit Work Order</title>
+  <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Edit Work Order #{{ wo['id'] }}</h1>
+<form action="{{ url_for('update', wo_id=wo['id']) }}" method="post">
+  <input type="hidden" name="id" value="{{ wo['id'] }}">
+  <label><b>Subject:</b><br>
+    <input type="text" name="subject" value="{{ wo['subject'] }}" required>
+  </label>
+  <label><b>Description:</b><br>
+    <textarea name="body" rows="4" cols="60" class='left' required>{{ wo['body'] }}</textarea>
+  </label>
+  <label><b>Area:</b><br>
+    <input type="text" name="room" value="{{ wo['room'] or '' }}">
+  </label>
+  <label><b>Date / Time Needed:</b><br>
+    <input
+      type="datetime-local"
+      name="needed"
+      value="{{ wo['needed']|replace(' ','T') if wo['needed'] else '' }}"
+      step="60">
+  </label>
+  <label><b>Requested For / By:</b><br>
+    <input type="text" name="requested_by" value="{{ wo['requested_by'] or '' }}">
+  </label>
+  <label><b>Completion Notes:</b><br>
+    <textarea name="completion_text" rows="3" cols="60" class='left'>{{ wo['completion_text'] or '' }}</textarea>
+  </label>
+  <label><b>Completed:</b>
+    <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %}>
+  </label>
+  <button type="submit">Save</button>
+</form>
+<h3><a href="{{ url_for('index') }}">Back to Open Work Orders</a></h3>
+<h4><a href="http://KurtSchwob.com" title="Kurt Schwob" target="_blank">Kurt Schwob</a></h4>
+</body>
+</html>

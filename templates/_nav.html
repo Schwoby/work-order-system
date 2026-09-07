@@ -1,0 +1,13 @@
+<nav class="nav-links">
+  <h3>
+    <p><a href="{{ url_for('workorders.wo_current') }}">Open Work Orders</a></p>
+    <p><a href="{{ url_for('workorders.wo_create') }}">Create Work Order</a></p>
+    <p><a href="{{ url_for('workorders.wo_completed') }}">Completed Work Orders</a></p>
+    <p><a href="{{ url_for('users.user_profile') }}">User Profile</a></p>
+    {% if current_effective_perm == 3 %}
+      <p><a href="{{ url_for('users.admin_users') }}">Admin Users</a></p>
+    {% endif %}
+    <p><a href="{{ url_for('users.user_logout') }}">Logout</a></p>
+  </h3>
+</nav>
+<p></p>

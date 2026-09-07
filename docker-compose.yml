@@ -1,14 +1,11 @@
 services:
   wo_app:
-    build: .
-    image: ghcr.io/schwoby/work-order-system:main
-    container_name: work-order-system
+    image: ghcr.io/schwoby/work-order-system:development
+    container_name: work-order-development
     ports:
-      - "3003:8080"
+      - "3004:8080"
     volumes:
       - ./data:/app/data
-      - ./static:/app/static
-      - ./templates:/app/templates
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     environment:

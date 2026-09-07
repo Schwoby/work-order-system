@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin User Edit</title>
+  <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Admin Edit User</h1>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class="flash">
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<p>Status: {{ status_text }}</p>
+
+<form method="post">
+  <h2>Login Details</h2>
+  <label>User Name:<br>
+    <input type="email" value="{{ user['user_id'] }}" readonly>
+  </label>
+
+  <h2>Profile Details</h2>
+  <label>Full Name:<br>
+    <input type="text" name="full_name" value="{{ prefs['full_name'] if prefs else '' }}" required>
+  </label>
+
+  <label>Display Name:<br>
+    <input type="text" name="display_name" value="{{ prefs['display_name'] if prefs else '' }}" required>
+  </label>
+
+  <h2>User Permissions</h2>
+  <div id="perm-group">
+    {% for role in all_roles %}
+      <label>
+        <input type="radio" name="status_role" value="{{ role['role_key'] }}"
+               {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
+        {{ role['role_name']|capitalize }}
+      </label>
+    {% endfor %}
+  </div>
+
+  <button type="submit">Update User</button>
+</form>
+
+{% include "_nav.html" %}
+
+<h4></h4>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin Users</title>
+  <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Admin Users</h1>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class="flash">
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<table>
+  <thead>
+    <tr>
+      <th>User Name</th>
+      <th>Full Name</th>
+      <th>Display Name</th>
+      <th>Permissions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+      <tr>
+        <td><a href="{{ url_for('users.admin_user_edit', user_key=user['user_key']) }}">{{ user['user_id'] }}</a></td>
+        <td>{{ user['full_name'] }}</td>
+        <td>{{ user['display_name'] }}</td>
+        <td>
+          {% for role in user['roles'] %}
+            {{ role['role_name'].capitalize() }}{% if not loop.last %}, {% endif %}
+          {% else %}
+            None
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include "_nav.html" %}
+
+<h4></h4>
+</body>
+</html>

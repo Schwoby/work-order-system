@@ -101,7 +101,31 @@ Create a local directory for the application to operate from (we recommend namin
 Create `docker-compose.yml` in this directory using your preferred text editor.
 
 Then **copy/paste the contents** of the provided `docker-compose.yml` from the repository into your local `docker-compose.yml`.
-
+```
+# docker-compose.yml
+services:
+  wo_app:
+    image: ghcr.io/schwoby/work-order-system:main
+    container_name: work-order-system
+    ports:
+      - "3003:8080"
+    volumes:
+      - ./data:/app/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      FLASK_ENV: production
+      FLASK_DEBUG: "0"
+      TEMPLATES_AUTO_RELOAD: "true"
+      TZ: America/Chicago
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+```
 When you copy/paste, update the following values as needed:
 
 - **Time zone (`TZ`)**: set this to your local time zone so container timestamps reflect your local time.

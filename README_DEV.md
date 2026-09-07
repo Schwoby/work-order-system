@@ -3,70 +3,39 @@
 This branch tracks active development work that has not yet been merged into production. Use this branch to follow ongoing changes and review the current development status.
 
 ## Current Goals / Scope
-- User creation
-  - Initial user creation (auto assigned admin role)
-  - additional users (must be accepted by an admin, roles selected at time of acceptance)
-- Profile page
-  - review all personal info
-  - change key personal info
-- Notification page
+
+### V0.3 User Intigration
+- Submitter field
+  - add submitter field to DB for workorders table. this field should not be editable by anyone at any time, but should be visible as plain text.
+  - submitters name should use the Display Name field
+  - rework of "Requested For / By:" for the WO submission will be needed
+- Light / Dark mode
+- Default view from log-in
+
+### V0.4 Notifications
+- User-defined notifications, including but not limited to:
   - add methods of being notifed
   - pair methods with content type
+- What to notify on
+  - When a work order is created or submitted
+  - When a work order is edited
+  - When a work order is completed
+  - When a work order is reopened or reactivated
+- How to notify
+  - Internal status page
+  - Email
+  - Other notification methods, such as:
+    - Text message
+    - Push notification service, such as Pushover
 
 ## Active Focus
 
-### User Management
-- Adding users
-  - Raw user creation
-- Adding user roles, including but not limited to:
-  - Submitter
-  - Fulfiller
-  - Administrator
-
-### Notifications
-User-defined notifications, including but not limited to:
-
-#### What to notify on
-- When a work order is created or submitted
-- When a work order is edited
-- When a work order is completed
-- When a work order is reopened or reactivated
-
-#### How to notify
-- Internal status page
-- Email
-- Other notification methods, such as:
-  - Text message
-  - Push notification service, such as Pushover
-
 ## Completed Work
-- updated copyright notice to Version 0.2
-- updated container name and port number in yml for side-by-side running with main branch
-- added README_DEV.md for better version control
-- added table creation for user control
-- pre-populating user_roles table
-- implemented user login and authentication gui
-- implemented new user creation gui
-- implemented user management gui for admins
-- refactored app.py
-- updated pages to load refactored pages
-- updated user roles to ladder permission format
 
 ## Known Issues
-- proposed solution - Further feature expansion can make submitter and fulfiller roles too broad of roles
-  - add new table that provides user groups/teams. each group/team can then have individualized submitter/fulfiller rights.
-- submitters currently have full edit access to all fields for all open DBs.
-- submitters currently can edit Completion Notes. this is a field only fulfillers should have access to edit.
-- edit pages sill use the term save instead of update
-- rework of "Requested For / By:" for the WO submission will be needed
 
 ## Next Steps
-- add submitter field to DB for workorders table. this field should not be editable by anyone at any time, but should be visible as plain text.
-- submitters name should use the Display Name field
 
 ## Notes
-- Attempted to combine the contents of 'static' and 'templates' into a single folder called 'assets'. Found out that these two folders are default organizational folders of Flask.
-- The volumes for templates and static kept the files from being updated at time of update.
-- Google account integration requires each installation to have it's own OAuth setup, which is more than i want to support at this point. may approach at a later date.
-- User management will be the end of v0.2; user integration into system will be v0.3 and notifications and dark mode will be v0.4
-- fixed - profile edit for other users can happen by changing URL profile user number
+- proposed solution - Further feature expansion can make submitter and fulfiller roles too broad of roles
+  - add new table that provides user groups/teams. each group/team can then have individualized submitter/fulfiller rights.

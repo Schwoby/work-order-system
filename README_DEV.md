@@ -29,12 +29,20 @@ This branch tracks active development work that has not yet been merged into pro
     - Push notification service, such as Pushover
 
 ## Active Focus
+- figure out a way to auto generate/update docker-compose.yml so that when development gets pulled into main, the file doesn't need to be manually edited
+  - maybe a simple search and replace of key terms
+    - :development -> :main
+    - -development -> -system
+    - 3004 -> 3003   
 
 ## Completed Work
+- 
 
 ## Known Issues
+- 
 
 ## Next Steps
+- 
 
 ## Notes
 - proposed solution - Further feature expansion can make submitter and fulfiller roles too broad of roles

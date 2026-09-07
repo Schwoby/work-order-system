@@ -35,17 +35,20 @@ For normal use, the release channel should be used.
 - Docker
 - Docker Compose v2
 
-## Project Structure
+## **Project Structure**
 
-The application depends on the following files and folders:
+The application is organized around a role-based workflow and access model:
+*   **Authentication and session management** — users sign in through the login flow, and the application tracks the active session for access control and routing.
+*   **Role-based authorization** — access to pages and actions is governed by permission levels, including blocked statuses and active roles for submitters, fulfillers, and administrators.
+*   **Profile completion workflow** — users must complete their profile before they can access work order functions.
+*   **Work order lifecycle** — submitters create work orders, fulfillers review and update them, and completed work orders are separated from open work orders.
+*   **Administrative oversight** — administrators can view users, review assigned roles, and manage user permissions.
+*   **Persistent application data** — user accounts, roles, profile preferences, and work orders are stored in the application database for retrieval and updates across sessions.
 
-- `app.py` — main Flask application
-- `Dockerfile` — container build instructions
-- `docker-compose.yml` — service definition for running the app
-- `requirements.txt` — Python dependency list
-- `templates/` — HTML templates required by the app
-- `static/` — static assets required by the app
-- `data/` — local data directory for the SQLite database
+## Data Location (SQLite)
+
+The SQLite database will be stored locally at:
+- `./data/database.db`
 
 ## Features
 
@@ -94,11 +97,3 @@ docker compose pull && docker compose up -d
 After the container starts, access the app at:
 
 - `http://localhost:3003`
-
-## Data Location (SQLite)
-
-The SQLite database will be stored locally at:
-
-- `./data/database.db`
-
-This path is relative to the **root directory you created** (`WorkOrderSystem/`). If the `data/` folder does not exist yet, it will be created as part of the container’s startup/initialization.

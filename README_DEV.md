@@ -2,7 +2,18 @@
 
 This branch tracks active development work that has not yet been merged into production. Use this branch to follow ongoing changes and review the current development status.
 
-## Current Focus
+## Current Goals / Intended Scope
+- User creation
+  - Initial user creation (auto assigned admin role)
+  - additional users (must be accepted by an admin, roles selected at time of acceptance)
+- Profile page
+  - review all personal info
+  - change key personal info
+- Notification page
+  - add methods of being notifed
+  - pair methods with content type
+
+## Current / Active Focus
 
 ### User Management
 - Adding users
@@ -28,17 +39,6 @@ User-defined notifications, including but not limited to:
   - Text message
   - Push notification service, such as Pushover
 
-## Current Goals
-- User creation
-  - Initial user creation (auto assigned admin role)
-  - additional users (must be accepted by an admin, roles selected at time of acceptance)
-- Profile page
-  - review all personal info
-  - change key personal info
-- Notification page
-  - add methods of being notifed
-  - pair methods with content type
-
 ## Completed Work
 - updated copyright notice to Version 0.2
 - updated container name and port number in yml for side-by-side running with main branch
@@ -52,7 +52,7 @@ User-defined notifications, including but not limited to:
 - updated pages to load refactored pages
 - updated user roles to ladder permission format
 
-## Known Issues
+## Known Issues (Open Problems / Corrections Needed)
 - proposed solution - Further feature expansion can make submitter and fulfiller roles too broad of roles
   - add new table that provides user groups/teams. each group/team can then have individualized submitter/fulfiller rights.
 - submitters currently have full edit access to all fields for all open DBs.
@@ -60,7 +60,7 @@ User-defined notifications, including but not limited to:
 - edit pages sill use the term save instead of update
 - rework of "Requested For / By:" for the WO submission will be needed
 
-## Next Steps
+## Next Steps (Immediate Follow-up)
 - add submitter field to DB for workorders table. this field should not be editable by anyone at any time, but should be visible as plain text.
 - submitters name should use the Display Name field
 

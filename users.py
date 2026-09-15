@@ -18,10 +18,6 @@ users_bp = Blueprint("users", __name__)
 
 @users_bp.route("/", methods=["GET", "POST"])
 def index():
-    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
-    if client_ip and "," in client_ip:
-        client_ip = client_ip.split(",")[0].strip()
-
     if request.method == "POST":
         email = request.form.get("user_id", "")
         password = request.form.get("password", "")
@@ -60,7 +56,7 @@ def index():
 
         return redirect(url_for("users.user_profile"))
 
-    return render_template("user_login.html", client_ip=client_ip, **get_nav_context())
+    return render_template("user_login.html", **get_nav_context())
 
 @users_bp.route("/user/create", methods=["GET", "POST"])
 def user_create():

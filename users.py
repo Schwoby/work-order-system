@@ -12,6 +12,7 @@ from helpers import (
     get_effective_role_perm,
     is_valid_email,
     create_user_account,
+    get_default_view_path,
 )
 
 users_bp = Blueprint("users", __name__)
@@ -32,13 +33,24 @@ def index():
         if not user_profile_complete(result):
             return redirect(url_for("users.create_profile"))
 
+        conn = get_db()
+        try:
+            prefs = conn.execute("""
+                SELECT default_view
+                FROM profile_preferences
+                WHERE user_key = ?
+            """, (result,)).fetchone()
+            default_view = prefs["default_view"] if prefs else "option1"
+        finally:
+            conn.close()
+
         effective_perm = get_effective_role_perm(result)
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
             flash("Login successful.")
-            return redirect(url_for("workorders.wo_current"))
+            return redirect(url_for(get_default_view_path(default_view)))
 
         flash("Your account does not have access to the work order system.")
         return redirect(url_for("users.user_profile"))
@@ -48,11 +60,22 @@ def index():
         if not user_profile_complete(user["user_key"]):
             return redirect(url_for("users.create_profile"))
 
+        conn = get_db()
+        try:
+            prefs = conn.execute("""
+                SELECT default_view
+                FROM profile_preferences
+                WHERE user_key = ?
+            """, (user["user_key"],)).fetchone()
+            default_view = prefs["default_view"] if prefs else "option1"
+        finally:
+            conn.close()
+
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
-            return redirect(url_for("workorders.wo_current"))
+            return redirect(url_for(get_default_view_path(default_view)))
 
         return redirect(url_for("users.user_profile"))
 

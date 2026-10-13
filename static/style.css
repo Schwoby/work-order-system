@@ -1,3 +1,25 @@
+:root {
+    --bg: #ffffff;
+    --bg-dark: #003366;
+    --text: #000000;
+    --text-dark: #6bb5ff;
+    --heading: #003366;
+    --heading-dark: #6bb5ff;
+    --table-border: #6bb5ff;
+    --table-head-bg: #6bb5ff;
+    --table-head-text: #003366;
+    --row-even: #eeeeee;
+    --row-odd: #ffffff;
+    --row-even-dark: #114477;
+    --row-odd-dark: #003366;
+    --due-even: #fff29a;
+    --due-odd: #ffff00;
+    --overdue-even: #ff7777;
+    --overdue-odd: #ff3333;
+    --link: #003366;
+    --link-dark: red;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -9,12 +31,12 @@ html {
     min-width: 1150px;
 }
 body.light {
-    background-color: #ffffff;
-    color: #000000;
+    background-color: var(--bg);
+    color: var(--text);
 }
 body.dark {
-    background-color: #003366;
-    color: #6bb5ff;
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
 }
 .left {
     text-align: left;
@@ -26,10 +48,10 @@ body.dark {
     text-transform: uppercase;
 }
 body.dark h1 {
-    color: #6bb5ff;
+    color: var(--heading-dark);
 }
 h1 {
-    color: #003366;
+    color: var(--heading);
     font-size: 3em;
     padding: 1em;
     white-space: nowrap;
@@ -48,10 +70,10 @@ h3 {
 body.dark h4,
 body.dark h4 a,
 body.dark h4 a:visited {
-    color: #6bb5ff;
+    color: var(--heading-dark);
 }
 h4, h4 a, h4 a:visited {
-    color: #003366;
+    color: var(--heading);
     font-size: 1em;
     white-space: nowrap;
 }
@@ -66,52 +88,54 @@ table {
     width: 100%;
 }
 td {
-    border-bottom: 1px solid #6bb5ff;
+    border-bottom: 1px solid var(--table-border);
 }
 th, td {
     padding: .3em .6em;
 }
 table thead th {
-    color: #003366 !important;
-    background-color: #6bb5ff !important;
+    color: var(--table-head-text) !important;
+    background-color: var(--table-head-bg) !important;
     font-size: 1.2em;
 }
 tbody tr:nth-child(even) {
-    background-color: #eeeeee;
+    background-color: var(--row-even);
+    color: var(--text);
 }
 tbody tr:nth-child(odd) {
-    background-color: #ffffff;
+    background-color: var(--row-odd);
+    color: var(--text);
 }
 body.dark tbody tr:not(.due):not(.overdue):nth-child(even) {
-    background-color: #114477;
-    color: #6bb5ff;
+    background-color: var(--row-even-dark);
+    color: var(--text-dark);
 }
 body.dark tbody tr:not(.due):not(.overdue):nth-child(odd) {
-    background-color: #003366;
-    color: #6bb5ff;
+    background-color: var(--row-odd-dark);
+    color: var(--text-dark);
 }
-body.dark tbody tr:not(.due):not(.overdue) a:link,
-body.dark tbody tr:not(.due):not(.overdue) a:visited,
-body.dark tbody tr:not(.due):not(.overdue) a:hover {
-    color: red;
+body.dark tbody tr:not(.due):not(.overdue) a {
+    color: var(--link-dark);
 }
-body.dark nav.nav-links a:link,
-body.dark nav.nav-links a:visited,
-body.dark nav.nav-links a:hover {
-    color: red;
+body.dark nav.nav-links a {
+    color: var(--link-dark);
 }
 .due:nth-child(even) {
-    background-color: #fff29a;
+    background-color: var(--due-even);
+    color: var(--text);
 }
 .due:nth-child(odd) {
-    background-color: #ffff00;
+    background-color: var(--due-odd);
+    color: var(--text);
 }
 .overdue:nth-child(even) {
-    background-color: #ff7777;
+    background-color: var(--overdue-even);
+    color: var(--text);
     font-weight: bold;
 }
 .overdue:nth-child(odd) {
-    background-color: #ff3333;
+    background-color: var(--overdue-odd);
+    color: var(--text);
     font-weight: bold;
 }
 .col-desc,

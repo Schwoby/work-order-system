@@ -27,16 +27,26 @@
       value="{{ wo['needed']|replace(' ','T') if wo['needed'] else '' }}"
       step="60">
   </label>
-  <label><b>Requested For / By:</b><br>
-    <input type="text" name="requested_by" value="{{ wo['requested_by'] or '' }}">
+  <label><b>Requested For:</b><br>
+    <input type="text" name="requested_for" value="{{ wo['requested_for'] or '' }}">
+  </label>
+  <label><b>Requested By:</b><br>
+    <input type="text" value="{{ wo['requested_by'] or '' }}" readonly>
+  </label>
+  <label><b>Completed By:</b><br>
+    <input type="text" value="{{ wo['completed_by'] or '' }}" readonly>
   </label>
 
-  {% if current_effective_perm == 2 %}
+  {% if current_effective_perm in (2, 3) %}
   <label><b>Completion Notes:</b><br>
     <textarea name="completion_text" rows="3" cols="60" class='left'>{{ wo['completion_text'] or '' }}</textarea>
   </label>
   <label><b>Completed:</b>
     <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %}>
+  </label>
+  {% else %}
+  <label><b>Completed:</b>
+    <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %} disabled>
   </label>
   {% endif %}
 

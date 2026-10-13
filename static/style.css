@@ -26,7 +26,7 @@ body.dark {
     text-transform: uppercase;
 }
 body.dark h1 {
-    color: #ffffff;
+    color: #6bb5ff;
 }
 h1 {
     color: #003366;
@@ -48,7 +48,7 @@ h3 {
 body.dark h4,
 body.dark h4 a,
 body.dark h4 a:visited {
-    color: #ffffff;
+    color: #6bb5ff;
 }
 h4, h4 a, h4 a:visited {
     color: #003366;
@@ -88,9 +88,11 @@ tbody tr:nth-child(odd) {
 }
 body.dark tbody tr:not(.due):not(.overdue):nth-child(even) {
     background-color: #114477;
+    color: #6bb5ff;
 }
 body.dark tbody tr:not(.due):not(.overdue):nth-child(odd) {
     background-color: #003366;
+    color: #6bb5ff;
 }
 .due:nth-child(even) {
     background-color: #fff29a;

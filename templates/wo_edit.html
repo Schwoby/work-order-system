@@ -11,15 +11,19 @@
 
 <form action="{{ url_for('workorders.update', wo_id=wo['id']) }}" method="post">
   <input type="hidden" name="id" value="{{ wo['id'] }}">
+
   <label><b>Subject:</b><br>
     <input type="text" name="subject" value="{{ wo['subject'] }}" required>
   </label>
+
   <label><b>Description:</b><br>
     <textarea name="body" rows="4" cols="60" class='left' required>{{ wo['body'] }}</textarea>
   </label>
+
   <label><b>Area:</b><br>
     <input type="text" name="room" value="{{ wo['room'] or '' }}">
   </label>
+
   <label><b>Date / Time Needed:</b><br>
     <input
       type="datetime-local"
@@ -27,22 +31,21 @@
       value="{{ wo['needed']|replace(' ','T') if wo['needed'] else '' }}"
       step="60">
   </label>
+
   <label><b>Requested For:</b><br>
     <input type="text" name="requested_for" value="{{ wo['requested_for'] or '' }}">
   </label>
+
   <p><b>Requested By:</b> {{ display_requested_by(wo['requested_by']) }}</p>
 
   {% if current_effective_perm in (2, 3) %}
-  <label><b>Completion Notes:</b><br>
-    <textarea name="completion_text" rows="3" cols="60" class='left'>{{ wo['completion_text'] or '' }}</textarea>
-  </label>
-  <label><b>Completed:</b>
-    <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %}>
-  </label>
-  {% else %}
-  <label><b>Completed:</b>
-    <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %} disabled>
-  </label>
+    <label><b>Completion Notes:</b><br>
+      <textarea name="completion_text" rows="3" cols="60" class='left'>{{ wo['completion_text'] or '' }}</textarea>
+    </label>
+
+    <label><b>Completed:</b>
+      <input type="checkbox" name="completed" {% if wo['completed'] %}checked{% endif %}>
+    </label>
   {% endif %}
 
   <button type="submit">Update Work Order</button>

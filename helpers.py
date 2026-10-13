@@ -145,12 +145,29 @@ def get_timezones():
         "Europe/Paris",
     ]
 
+def get_current_user_theme():
+    user = get_current_user()
+    if not user:
+        return "light"
+
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT theme
+            FROM profile_preferences
+            WHERE user_key = ?
+        """, (user["user_key"],)).fetchone()
+        return row["theme"] if row and row["theme"] else "light"
+    finally:
+        conn.close()
+
 def get_nav_context():
     user = get_current_user()
     return {
         "current_user": user,
         "current_roles": get_all_user_roles(user["user_key"]) if user else [],
         "current_effective_perm": get_effective_role_perm(user["user_key"]) if user else None,
+        "current_theme": get_current_user_theme(),
     }
 
 def login_required(view):

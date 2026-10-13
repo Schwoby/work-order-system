@@ -39,7 +39,7 @@ This branch tracks active development work that has not yet been merged into pro
 - 
 
 ## Known Issues
-- 
+- unable to mark WOs as closed.
 
 ## Next Steps
 - 

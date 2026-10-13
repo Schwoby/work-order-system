@@ -54,7 +54,7 @@
   </label>
 
   <fieldset>
-    <legend>Theme</legend>
+    <h2>Theme</h2>
     <label>
       <input type="radio" name="theme" value="light" {% if prefs and prefs['theme'] == 'light' %}checked{% endif %} required>
       Light
@@ -66,7 +66,7 @@
   </fieldset>
 
   <fieldset>
-    <legend>Default View</legend>
+    <h2>Default View</h2>
     <label>
       <input type="radio" name="default_view" value="option1" {% if prefs and prefs['default_view'] == 'option1' %}checked{% endif %} required>
       Open Work Orders
@@ -82,7 +82,7 @@
   </fieldset>
 
   <fieldset>
-    <legend>Name View</legend>
+    <h2>Name View</h2>
     <label>
       <input type="radio" name="name_view" value="user_id" {% if prefs and prefs['name_view'] == 'user_id' %}checked{% endif %} required>
       User ID
@@ -96,7 +96,7 @@
       Display Name
     </label>
   </fieldset>
-
+<br>
   <button type="submit">Update Changes</button>
 </form>
 

@@ -73,7 +73,16 @@ The SQLite database will be stored locally at:
 
 ## Change Log
 
-### V0.1 to V0.2
+### V0.3
+- removed completed.html, wo_completed.html replaced the original
+- removed edit.html, wo_edit.html replaced the original
+- fully implemented a working light/dark mode (user profile)
+- fully implemented the default page for login (user profile)
+- implemented user name view select (user profile)
+- created DB migration tool from V0.2 to v0.3
+- updated copyright notice to Version 0.3
+
+### V0.2
 - added user authentication and login flow
 - added user creation and approval workflow
 - added role-based authorization
@@ -83,6 +92,9 @@ The SQLite database will be stored locally at:
 - updated UI pages to load the refactored application structure
 - updated user roles to ladder permission format
 - updated copyright notice to Version 0.2
+
+### V0.1
+- initial release
 
 ## How It Works
 

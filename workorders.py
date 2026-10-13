@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime, timedelta
 
 from db import get_db
-from helpers import active_access_required, get_nav_context, get_current_user, get_effective_role_perm, now_local_str, LOCAL_TZ
+from helpers import active_access_required, get_nav_context, get_current_user, get_effective_role_perm, now_local_str, LOCAL_TZ, get_requested_by_display
 
 workorders_bp = Blueprint("workorders", __name__)
 
@@ -25,6 +25,11 @@ def wo_current():
           needed ASC,
           submitted ASC
     """).fetchall()
+    workorders = []
+    for wo in wos:
+        wo_dict = dict(wo)
+        wo_dict["requested_by_display"] = get_requested_by_display(wo_dict.get("requested_by"))
+        workorders.append(wo_dict)
     conn.close()
     return render_template(
         "wo_current.html",

@@ -94,6 +94,11 @@ body.dark tbody tr:not(.due):not(.overdue) a:visited,
 body.dark tbody tr:not(.due):not(.overdue) a:hover {
     color: red;
 }
+body.dark nav.nav-links a:link,
+body.dark nav.nav-links a:visited,
+body.dark nav.nav-links a:hover {
+    color: red;
+}
 .due:nth-child(even) {
     background-color: #fff29a;
 }

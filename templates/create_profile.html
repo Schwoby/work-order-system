@@ -54,7 +54,7 @@
   </fieldset>
   <br>
   <fieldset>
-    <legend>Default View</legend>
+    <legend>Default Page</legend>
     <label>
       <input type="radio" name="default_view" value="option1"
         {% if prefs and prefs['default_view'] == 'option1' %}checked{% elif not prefs %}checked{% endif %} required>
@@ -67,6 +67,25 @@
     <label>
       <input type="radio" name="default_view" value="option3" {% if prefs and prefs['default_view'] == 'option3' %}checked{% endif %}>
       Completed Work Orders
+    </label>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend>Name View</legend>
+    <label>
+      <input type="radio" name="name_view" value="user_id"
+        {% if prefs and prefs['name_view'] == 'user_id' %}checked{% elif not prefs %}checked{% endif %} required>
+      User ID
+    </label>
+    <label>
+      <input type="radio" name="name_view" value="user_name"
+        {% if prefs and prefs['name_view'] == 'user_name' %}checked{% endif %}>
+      User Name
+    </label>
+    <label>
+      <input type="radio" name="name_view" value="display_name"
+        {% if prefs and prefs['name_view'] == 'display_name' %}checked{% endif %}>
+      Display Name
     </label>
   </fieldset>
 

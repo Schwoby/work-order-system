@@ -36,11 +36,14 @@ This branch tracks active development work that has not yet been merged into pro
     - 3004 -> 3003   
 
 ## Completed Work
-- 
+- fixed WO close issue.
+- implemented initial dark mode (some tweaking is still needed)
+- implemented initial page viewing
+- implemented new submitter field
 
 ## Known Issues
-- unable to mark WOs as closed.
-- existing entries need to converted to have a default state of submitter status, use initial user for this.
+- fixed: unable to mark WOs as closed.
+- fixed: existing entries need to converted to have a default state of submitter status, use initial user for this.
 
 ## Next Steps
 - 

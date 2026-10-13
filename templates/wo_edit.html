@@ -33,9 +33,6 @@
   <label><b>Requested By:</b><br>
     <input type="text" value="{{ wo['requested_by'] or '' }}" readonly>
   </label>
-  <label><b>Completed By:</b><br>
-    <input type="text" value="{{ wo['completed_by'] or '' }}" readonly>
-  </label>
 
   {% if current_effective_perm in (2, 3) %}
   <label><b>Completion Notes:</b><br>

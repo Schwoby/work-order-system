@@ -58,13 +58,6 @@ h4 a:hover {
     color: #6bb5ff;
     font-size: 1em;
 }
-body.dark a,
-body.dark a:visited {
-    color: #6bb5ff;
-}
-body.dark a:hover {
-    color: #ffffff;
-}
 h4::before {
     content:"© 2025 Kurt Schwob. All rights reserved. ";
 }
@@ -100,12 +93,22 @@ body.dark tbody tr:not(.due):not(.overdue):nth-child(odd) {
     background-color: #003366;
     color: #6bb5ff;
 }
-body.dark tbody tr:not(.due):not(.overdue) a,
-body.dark tbody tr:not(.due):not(.overdue) a:visited {
-    color: #6bb5ff;
+body.dark a:link {
+    color: red;
 }
-body.dark tbody tr:not(.due):not(.overdue) a:hover {
+body.dark a:visited {
+    color: yellow;
+}
+body.dark a:hover {
     color: #ffffff;
+}
+body.dark tbody tr.due a:link,
+body.dark tbody tr.due a:visited,
+body.dark tbody tr.overdue a:link,
+body.dark tbody tr.overdue a:visited,
+body.dark tbody tr.due a:hover,
+body.dark tbody tr.overdue a:hover {
+    color: inherit;
 }
 .due:nth-child(even) {
     background-color: #fff29a;

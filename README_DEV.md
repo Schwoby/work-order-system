@@ -40,6 +40,7 @@ This branch tracks active development work that has not yet been merged into pro
 
 ## Known Issues
 - unable to mark WOs as closed.
+- existing entries need to converted to have a default state of submitter status, use initial user for this.
 
 ## Next Steps
 - 

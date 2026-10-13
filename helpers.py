@@ -177,7 +177,7 @@ def get_current_user_name_view():
     finally:
         conn.close()
 
-def get_requested_by_display(user_key_value):
+def get_requested_by(user_key_value):
     if not user_key_value:
         return ""
 

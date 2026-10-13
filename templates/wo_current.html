@@ -17,8 +17,8 @@
       <th class='left'>Description</th>
       <th>Area</th>
       <th>Needed</th>
-      <th>Requested For</th>
       <th>Requested By</th>
+      <th>Requested For</th>
       <th>Submitted</th>
       <th>Last Update</th>
     </tr>
@@ -31,8 +31,8 @@
       <td class='left capfirst'>{{ wo['body'] }}</td>
       <td class='cap'>{{ wo['room'] or '' }}</td>
       <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed'] | format_needed_date }}</span> <span class="no-wrap">{{ wo['needed'] | format_needed_time }}</span>{% endif %}</td>
-      <td class='cap'>{{ wo['requested_for'] or '' }}</td>
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
+      <td class='cap'>{{ wo['requested_for'] or '' }}</td>
       <td>{{ wo['submitted'] or '' }}</td>
       <td>{{ wo['last_update'] or '' }}</td>
     </tr>

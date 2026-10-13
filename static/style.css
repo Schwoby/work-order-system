@@ -8,7 +8,11 @@
 html {
     min-width: 1150px;
 }
-body {
+body.light {
+    background-color: #ffffff;
+    color: #000000;
+}
+body.dark {
     background-color: #003366;
     color: #ffffff;
 }
@@ -21,27 +25,43 @@ body {
 .capfirst::first-letter {
     text-transform: uppercase;
 }
-h1 {
+body.light h1 {
+    color: #003366;
+}
+body.dark h1 {
     color: #ffffff;
+}
+h1 {
     font-size: 3em;
     padding: 1em;
     white-space: nowrap;
     min-width: 800px;
 }
+body.light h2,
+body.light h3,
+body.light h4,
+body.light h4 a,
+body.light h4 a:visited {
+    color: #003366;
+}
+body.dark h2,
+body.dark h3,
+body.dark h4,
+body.dark h4 a,
+body.dark h4 a:visited {
+    color: #ffffff;
+}
 h2 {
     font-size: 2em;
     padding-top: 2em;
     white-space: nowrap;
-    color: #ffffff;
 }
 h3 {
     font-size: 1em;
     padding: 3em;
     white-space: nowrap;
-    color: #ffffff;
 }
 h4, h4 a, h4 a:visited {
-    color: #ffffff;
     font-size: 1em;
     white-space: nowrap;
 }
@@ -58,8 +78,6 @@ h4::after {
 table {
     border-collapse: collapse;
     width: 100%;
-    background-color: #003366;
-    color: #ffffff;
 }
 td {
     border-bottom: 1px solid #6bb5ff
@@ -72,13 +90,21 @@ table thead th {
     background-color: #6bb5ff !important;
     font-size: 1.2em;
 }
-tbody tr:nth-child(even) {
+body.light tbody tr:nth-child(even) {
     background-color: #eeeeee;
     color: #000000;
 }
-tbody tr:nth-child(odd) {
+body.light tbody tr:nth-child(odd) {
     background-color: #ffffff;
     color: #000000;
+}
+body.dark tbody tr:nth-child(even) {
+    background-color: #2b4d73;
+    color: #ffffff;
+}
+body.dark tbody tr:nth-child(odd) {
+    background-color: #1f3d5c;
+    color: #ffffff;
 }
 .due:nth-child(even) {
     background-color: #fff29a;

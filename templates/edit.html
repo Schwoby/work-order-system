@@ -6,7 +6,7 @@
   <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="{{ current_theme or 'light' }}">
 <h1>Edit Work Order #{{ wo['id'] }}</h1>
 <form action="{{ url_for('update', wo_id=wo['id']) }}" method="post">
   <input type="hidden" name="id" value="{{ wo['id'] }}">

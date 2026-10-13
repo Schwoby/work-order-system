@@ -110,9 +110,6 @@ body.dark tbody tr:not(.due):not(.overdue):nth-child(odd) {
 .col-notes {
     width: 30%;
 }
-.col-notes {
-    text-align: left;
-}
 form {
     width: 100%;
     max-width: 500px;

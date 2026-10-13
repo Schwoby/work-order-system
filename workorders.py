@@ -6,6 +6,14 @@ from helpers import active_access_required, get_nav_context, get_current_user, g
 
 workorders_bp = Blueprint("workorders", __name__)
 
+def _decorate_workorders(rows):
+    workorders = []
+    for wo in rows:
+        wo_dict = dict(wo)
+        wo_dict["requested_by_display"] = get_requested_by_display(wo_dict.get("requested_by"))
+        workorders.append(wo_dict)
+    return workorders
+
 @workorders_bp.route("/wo/current")
 @active_access_required
 def wo_current():
@@ -25,15 +33,11 @@ def wo_current():
           needed ASC,
           submitted ASC
     """).fetchall()
-    workorders = []
-    for wo in wos:
-        wo_dict = dict(wo)
-        wo_dict["requested_by_display"] = get_requested_by_display(wo_dict.get("requested_by"))
-        workorders.append(wo_dict)
+    workorders = _decorate_workorders(wos)
     conn.close()
     return render_template(
         "wo_current.html",
-        workorders=wos,
+        workorders=workorders,
         now=datetime.now(LOCAL_TZ),
         soon=datetime.now(LOCAL_TZ) + timedelta(hours=72),
         **get_nav_context()
@@ -53,8 +57,9 @@ def wo_completed():
         WHERE completed = 1
         ORDER BY last_update DESC
     """).fetchall()
+    workorders = _decorate_workorders(wos)
     conn.close()
-    return render_template("wo_completed.html", workorders=wos, **get_nav_context())
+    return render_template("wo_completed.html", workorders=workorders, **get_nav_context())
 
 @workorders_bp.route("/add", methods=["POST"])
 @active_access_required
@@ -71,7 +76,7 @@ def add():
     requested_for = request.form.get("requested_for")
 
     now_local = now_local_str()
-    requested_by = user["user_id"]
+    requested_by = user["user_key"]
 
     conn = get_db()
     conn.execute("""
@@ -88,8 +93,11 @@ def add():
 def wo_edit(wo_id):
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
+    wo_dict = dict(wo) if wo else None
+    if wo_dict:
+        wo_dict["requested_by_display"] = get_requested_by_display(wo_dict.get("requested_by"))
     conn.close()
-    return render_template("wo_edit.html", wo=wo, **get_nav_context())
+    return render_template("wo_edit.html", wo=wo_dict, **get_nav_context())
 
 @workorders_bp.route("/update/<int:wo_id>", methods=["POST"])
 @active_access_required
@@ -106,7 +114,7 @@ def update(wo_id):
     completion_text = request.form.get("completion_text")
 
     ts = now_local_str()
-    completed_by = user["user_id"] if completed == 1 else None
+    completed_by = user["user_key"] if completed == 1 else None
 
     conn = get_db()
     try:

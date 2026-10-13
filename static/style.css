@@ -11,12 +11,10 @@ html {
 body.light {
     background-color: #ffffff;
     color: #000000;
-    font-family: Arial, Helvetica, sans-serif;
 }
 body.dark {
     background-color: #003366;
     color: #ffffff;
-    font-family: Arial, Helvetica, sans-serif;
 }
 .left {
     text-align: left;
@@ -108,5 +106,5 @@ form input,textarea,button,select {
     padding: .25em;
 }
 .no-wrap {
-  white-space: nowrap;
+    white-space: nowrap;
 }

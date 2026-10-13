@@ -34,12 +34,10 @@
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
       <td class='cap'>{{ wo['requested_by'] or '' }}</td>
       <td>{{ wo['submitted'] or '' }}</td>
-      <td class='cap'>{{ wo['completed_by'] or '' }}</td>
-      <td class='left capfirst'>{{ wo['completion_text'] or '' }}</td>
       <td>{{ wo['last_update'] or '' }}</td>
     </tr>
   {% else %}
-    <tr><td colspan="11">No open work orders.</td></tr>
+    <tr><td colspan="9">No open work orders.</td></tr>
   {% endfor %}
   </tbody>
 </table>

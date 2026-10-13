@@ -45,7 +45,9 @@ h3 {
     padding: 3em;
     white-space: nowrap;
 }
-body.dark h4, body.dark h4 a, body.dark h4 a:visited {
+body.dark h4,
+body.dark h4 a,
+body.dark h4 a:visited {
     color: #ffffff;
 }
 h4, h4 a, h4 a:visited {
@@ -68,7 +70,7 @@ table {
     width: 100%;
 }
 td {
-    border-bottom: 1px solid #6bb5ff
+    border-bottom: 1px solid #6bb5ff;
 }
 th, td {
     padding: .3em .6em;
@@ -84,10 +86,10 @@ tbody tr:nth-child(even) {
 tbody tr:nth-child(odd) {
     background-color: #ffffff;
 }
-body.dark tbody tr:nth-child(even) {
+body.dark tbody tr:not(.due):not(.overdue):nth-child(even) {
     background-color: #114477;
 }
-body.dark tbody tr:nth-child(odd) {
+body.dark tbody tr:not(.due):not(.overdue):nth-child(odd) {
     background-color: #003366;
 }
 .due:nth-child(even) {

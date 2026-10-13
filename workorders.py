@@ -2,7 +2,15 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime, timedelta
 
 from db import get_db
-from helpers import active_access_required, get_nav_context, get_current_user, get_effective_role_perm, now_local_str, LOCAL_TZ, get_requested_by_display
+from helpers import (
+    active_access_required,
+    get_nav_context,
+    get_current_user,
+    get_effective_role_perm,
+    now_local_str,
+    LOCAL_TZ,
+    get_requested_by,
+)
 
 workorders_bp = Blueprint("workorders", __name__)
 
@@ -10,7 +18,7 @@ def _decorate_workorders(rows):
     workorders = []
     for wo in rows:
         wo_dict = dict(wo)
-        wo_dict["requested_by_display"] = get_requested_by_display(wo_dict.get("requested_by"))
+        wo_dict["requested_by_display"] = get_requested_by(wo_dict.get("requested_by"))
         workorders.append(wo_dict)
     return workorders
 
@@ -48,7 +56,7 @@ def wo_current():
 def wo_create():
     return render_template("wo_create.html", **get_nav_context())
 
-@workorders_bp.route("/completed")
+@workorders_bp.route("/wo/completed")
 @active_access_required
 def wo_completed():
     conn = get_db()
@@ -74,9 +82,9 @@ def add():
     room = request.form.get("room")
     needed = request.form.get("needed")
     requested_for = request.form.get("requested_for")
+    requested_by = user["user_key"]
 
     now_local = now_local_str()
-    requested_by = user["user_key"]
 
     conn = get_db()
     conn.execute("""
@@ -95,7 +103,7 @@ def wo_edit(wo_id):
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
     wo_dict = dict(wo) if wo else None
     if wo_dict:
-        wo_dict["requested_by_display"] = get_requested_by_display(wo_dict.get("requested_by"))
+        wo_dict["requested_by_display"] = get_requested_by(wo_dict.get("requested_by"))
     conn.close()
     return render_template("wo_edit.html", wo=wo_dict, **get_nav_context())
 
@@ -105,16 +113,13 @@ def update(wo_id):
     user = get_current_user()
     effective_perm = get_effective_role_perm(user["user_key"])
 
-    completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]
     body = request.form["body"]
     room = request.form.get("room")
     needed = request.form.get("needed")
     requested_for = request.form.get("requested_for")
-    completion_text = request.form.get("completion_text")
 
     ts = now_local_str()
-    completed_by = user["user_key"] if completed == 1 else None
 
     conn = get_db()
     try:
@@ -135,6 +140,11 @@ def update(wo_id):
                 WHERE id = ?
             """, (subject, body, room, needed, requested_for, ts, wo_id))
         else:
+            completion_text = request.form.get("completion_text")
+
+            completed = 1 if request.form.get("completed") == "on" else 0
+            completed_by = user["user_key"] if completed == 1 else None
+
             conn.execute("""
                 UPDATE workorders
                 SET subject = ?,

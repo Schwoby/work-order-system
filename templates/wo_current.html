@@ -20,6 +20,7 @@
       <th>Requested By</th>
       <th>Requested For</th>
       <th>Submitted</th>
+      <th>Progress Notes</th>
       <th>Last Update</th>
     </tr>
   </thead>
@@ -34,10 +35,11 @@
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
       <td>{{ wo['submitted'] or '' }}</td>
+      <td class='left capfirst'>{{ wo['completion_text'] or '' }}</td>
       <td>{{ wo['last_update'] or '' }}</td>
     </tr>
   {% else %}
-    <tr><td colspan="9">No open work orders.</td></tr>
+    <tr><td colspan="10">No open work orders.</td></tr>
   {% endfor %}
   </tbody>
 </table>

@@ -1,102 +1,119 @@
 * {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	border-collapse: collapse;
-	text-align: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-collapse: collapse;
+    text-align: center;
 }
 html {
-	min-width: 1150px;
+    min-width: 1150px;
+}
+body {
+    background-color: #003366;
+    color: #ffffff;
 }
 .left {
-	text-align: left;
+    text-align: left;
 }
 .cap {
-	text-transform: capitalize;
+    text-transform: capitalize;
 }
 .capfirst::first-letter {
-	text-transform: uppercase;
+    text-transform: uppercase;
 }
 h1 {
-	color: #003366;
-	font-size: 3em;
-	padding: 1em;
-	white-space: nowrap;
-	min-width: 800px;
+    color: #ffffff;
+    font-size: 3em;
+    padding: 1em;
+    white-space: nowrap;
+    min-width: 800px;
 }
 h2 {
-	font-size: 2em;
-	padding-top: 2em;
-	white-space: nowrap;
+    font-size: 2em;
+    padding-top: 2em;
+    white-space: nowrap;
+    color: #ffffff;
 }
 h3 {
-	font-size: 1em;
-	padding: 3em;
-	white-space: nowrap;
+    font-size: 1em;
+    padding: 3em;
+    white-space: nowrap;
+    color: #ffffff;
 }
 h4, h4 a, h4 a:visited {
-	color: #003366;
-	font-size: 1em;
-	white-space: nowrap;
+    color: #ffffff;
+    font-size: 1em;
+    white-space: nowrap;
 }
 h4 a:hover {
-	color: #6bb5ff;
-	font-size: 1em;
+    color: #6bb5ff;
+    font-size: 1em;
 }
 h4::before {
-	content:"© 2025 Kurt Schwob. All rights reserved. ";
+    content:"© 2025 Kurt Schwob. All rights reserved. ";
 }
 h4::after {
-	content:" Version: 0.2";
+    content:" Version: 0.2";
 }
 table {
-	border-collapse: collapse;
-	width: 100%;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #003366;
+    color: #ffffff;
 }
 td {
-	border-bottom: 1px solid #6bb5ff
+    border-bottom: 1px solid #6bb5ff
 }
 th, td {
-	padding: .3em .6em;
+    padding: .3em .6em;
 }
 table thead th {
-	color: #003366 !important;
-	background-color: #6bb5ff !important;
-	font-size: 1.2em;
+    color: #003366 !important;
+    background-color: #6bb5ff !important;
+    font-size: 1.2em;
 }
 tbody tr:nth-child(even) {
-	background-color: #eeeeee;
+    background-color: #eeeeee;
+    color: #000000;
 }
 tbody tr:nth-child(odd) {
-	background-color: #ffffff;
+    background-color: #ffffff;
+    color: #000000;
 }
 .due:nth-child(even) {
-	background-color: #fff29a;
+    background-color: #fff29a;
 }
 .due:nth-child(odd) {
-	background-color: #ffff00;
+    background-color: #ffff00;
 }
 .overdue:nth-child(even) {
-	background-color: #ff7777;
-	font-weight: bold;
+    background-color: #ff7777;
+    font-weight: bold;
 }
 .overdue:nth-child(odd) {
-	background-color: #ff3333;
-	font-weight: bold;
+    background-color: #ff3333;
+    font-weight: bold;
 }
 form {
-	width: 100%;
-	max-width: 500px;
-	margin:0 auto;
+    width: 100%;
+    max-width: 500px;
+    margin:0 auto;
 }
 form label {
-	display:block;
-	margin:.4em 0;
+    display:block;
+    margin:.4em 0;
 }
 form input,textarea,button,select {
-	border: 1px #000000 solid;
-	padding: .25em;
+    border: 1px #000000 solid;
+    padding: .25em;
 }
 .no-wrap {
   white-space: nowrap;
+}
+.flash {
+    list-style: none;
+    padding: 1em;
+}
+.flash li {
+    margin: .25em 0;
 }

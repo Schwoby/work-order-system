@@ -63,16 +63,17 @@ def add():
     body = request.form["body"]
     room = request.form.get("room")
     needed = request.form.get("needed")
-    requested_by = request.form.get("requested_by")
+    requested_for = request.form.get("requested_for")
 
     now_local = now_local_str()
+    requested_by = user["user_id"]
 
     conn = get_db()
     conn.execute("""
         INSERT INTO workorders
-        (subject, body, room, needed, requested_by, submitted, last_update)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (subject, body, room, needed, requested_by, now_local, now_local))
+        (subject, body, room, needed, requested_for, requested_by, submitted, last_update)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (subject, body, room, needed, requested_for, requested_by, now_local, now_local))
     conn.commit()
     conn.close()
     return redirect(url_for("workorders.wo_current"))
@@ -96,10 +97,11 @@ def update(wo_id):
     body = request.form["body"]
     room = request.form.get("room")
     needed = request.form.get("needed")
-    requested_by = request.form.get("requested_by")
+    requested_for = request.form.get("requested_for")
     completion_text = request.form.get("completion_text")
 
     ts = now_local_str()
+    completed_by = user["user_id"] if completed == 1 else None
 
     conn = get_db()
     try:
@@ -115,10 +117,10 @@ def update(wo_id):
                     body = ?,
                     room = ?,
                     needed = ?,
-                    requested_by = ?,
+                    requested_for = ?,
                     last_update = ?
                 WHERE id = ?
-            """, (subject, body, room, needed, requested_by, ts, wo_id))
+            """, (subject, body, room, needed, requested_for, ts, wo_id))
         else:
             conn.execute("""
                 UPDATE workorders
@@ -126,13 +128,14 @@ def update(wo_id):
                     body = ?,
                     room = ?,
                     needed = ?,
-                    requested_by = ?,
+                    requested_for = ?,
                     completion_text = ?,
                     completed = ?,
+                    completed_by = ?,
                     last_update = ?
                 WHERE id = ?
-            """, (subject, body, room, needed, requested_by,
-                  completion_text, completed, ts, wo_id))
+            """, (subject, body, room, needed, requested_for,
+                  completion_text, completed, completed_by, ts, wo_id))
 
         conn.commit()
         return redirect(url_for("workorders.wo_current"))

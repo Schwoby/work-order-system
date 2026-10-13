@@ -149,23 +149,24 @@ def create_profile():
             timezone = request.form.get("timezone", "").strip()
             theme = request.form.get("theme", "").strip()
             default_view = request.form.get("default_view", "").strip()
+            name_view = request.form.get("name_view", "").strip()
 
-            if not all([full_name, display_name, timezone, theme, default_view]):
+            if not all([full_name, display_name, timezone, theme, default_view, name_view]):
                 flash("All profile fields are required.")
                 return redirect(url_for("users.create_profile"))
 
             if existing:
                 conn.execute("""
                     UPDATE profile_preferences
-                    SET full_name = ?, display_name = ?, timezone = ?, theme = ?, default_view = ?
+                    SET full_name = ?, display_name = ?, timezone = ?, theme = ?, default_view = ?, name_view = ?
                     WHERE user_key = ?
-                """, (full_name, display_name, timezone, theme, default_view, user["user_key"]))
+                """, (full_name, display_name, timezone, theme, default_view, name_view, user["user_key"]))
             else:
                 conn.execute("""
                     INSERT INTO profile_preferences
-                    (user_key, full_name, display_name, timezone, theme, default_view)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (user["user_key"], full_name, display_name, timezone, theme, default_view))
+                    (user_key, full_name, display_name, timezone, theme, default_view, name_view)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (user["user_key"], full_name, display_name, timezone, theme, default_view, name_view))
 
             conn.commit()
 
@@ -283,9 +284,9 @@ def admin_user_edit(user_key):
             else:
                 conn.execute("""
                     INSERT INTO profile_preferences
-                    (user_key, full_name, display_name, timezone, theme, default_view)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (user_key, full_name, display_name, "UTC", "light", "option1"))
+                    (user_key, full_name, display_name, timezone, theme, default_view, name_view)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (user_key, full_name, display_name, "UTC", "light", "option1", "user_id"))
 
             conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
 

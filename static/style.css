@@ -57,7 +57,7 @@ h4::before {
     content:"© 2025 Kurt Schwob. All rights reserved. ";
 }
 h4::after {
-    content:" Version: 0.2";
+    content:" Version: 0.3";
 }
 table {
     border-collapse: collapse;

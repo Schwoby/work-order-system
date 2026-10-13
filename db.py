@@ -127,13 +127,12 @@ def init_db():
     """)
 
     # Populate requested_by for all existing rows with the initial user's user_id.
-    if initial_user_id:
-        conn.execute("""
-            UPDATE workorders
-            SET requested_by = ?
-            WHERE requested_by IS NULL OR TRIM(requested_by) = ''
-        """, (initial_user_id,))
+    conn.execute("""
+        UPDATE workorders
+        SET requested_by = '1'
+    """)
 
+    if initial_user_id:
         conn.execute("""
             UPDATE workorders
             SET completed_by = ?

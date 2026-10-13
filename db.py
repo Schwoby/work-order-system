@@ -84,6 +84,7 @@ def init_db():
             timezone TEXT NOT NULL,
             theme TEXT NOT NULL,
             default_view TEXT NOT NULL,
+            name_view TEXT NOT NULL DEFAULT 'user_id',
             FOREIGN KEY (user_key) REFERENCES internal_account(user_key) ON DELETE CASCADE
         )
     """)
@@ -112,12 +113,13 @@ def init_db():
             (6, "rejected", 0),
         ])
 
+    _ensure_column(conn, "profile_preferences", "name_view", "TEXT", "'user_id'")
+
+    # Work order migrations
     _ensure_column(conn, "workorders", "requested_for", "TEXT")
     _ensure_column(conn, "workorders", "completed_by", "TEXT")
 
-    initial_user_id = _get_initial_user_id(conn)
-
-    # Move old requested_by content into requested_for if requested_for is blank.
+    # Backfill requested_for from old requested_by values
     conn.execute("""
         UPDATE workorders
         SET requested_for = requested_by
@@ -126,12 +128,14 @@ def init_db():
           AND TRIM(requested_by) != ''
     """)
 
-    # Populate requested_by for all existing rows with the initial user's user_id.
+    # Update all existing requested_by values to user_key = 1
     conn.execute("""
         UPDATE workorders
         SET requested_by = '1'
     """)
 
+    # Backfill completed_by for already completed rows
+    initial_user_id = _get_initial_user_id(conn)
     if initial_user_id:
         conn.execute("""
             UPDATE workorders

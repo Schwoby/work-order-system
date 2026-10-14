@@ -4,14 +4,6 @@ This branch tracks active development work that has not yet been merged into pro
 
 ## Current Goals / Scope
 
-### V0.3 User Intigration
-- Submitter field
-  - add submitter field to DB for workorders table. this field should not be editable by anyone at any time, but should be visible as plain text.
-  - submitters name should use the Display Name field
-  - rework of "Requested For / By:" for the WO submission will be needed
-- Light / Dark mode
-- Default view from log-in
-
 ### V0.4 Notifications
 - User-defined notifications, including but not limited to:
   - add methods of being notifed
@@ -36,15 +28,10 @@ This branch tracks active development work that has not yet been merged into pro
     - 3004 -> 3003   
 
 ## Completed Work
-- fixed WO close issue.
-- implemented initial dark mode (some tweaking is still needed)
-- implemented initial page viewing
-- implemented new submitter field
+- 
 
 ## Known Issues
-- fixed: unable to mark WOs as closed.
-- fixed: existing entries need to converted to have a default state of submitter status, use initial user for this.
-- Dark Mode needs optimization/configuration
+- 
 
 ## Next Steps
 - 

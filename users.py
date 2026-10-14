@@ -111,7 +111,7 @@ def user_create():
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
             flash("Account created successfully.")
-            return redirect(url_for("workorders.wo_current"))
+            return redirect(url_for("users.create_profile"))
 
         flash("Account created, but no work order access is available.")
         return redirect(url_for("users.user_profile"))
@@ -187,7 +187,8 @@ def user_profile():
 
             conn.commit()
             flash("Profile updated.")
-            return redirect(url_for("workorders.wo_current"))
+
+            return redirect(url_for(get_default_view_path(default_view)))
 
         return render_template(
             "user_edit.html",
@@ -247,7 +248,7 @@ def create_profile():
 
             if effective_perm in (1, 2, 3):
                 flash("Profile saved.")
-                return redirect(url_for("workorders.wo_current"))
+                return redirect(url_for(get_default_view_path(default_view)))
 
             flash("Profile saved.")
             return redirect(url_for("users.user_profile"))

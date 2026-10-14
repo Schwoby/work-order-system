@@ -73,7 +73,18 @@ The SQLite database will be stored locally at:
 
 ## Change Log
 
-### V0.1 to V0.2
+### V0.3
+- Added profile-based light/dark mode support
+- Added name display preference in user profile settings
+- Updated requested-by display handling in work order views
+- Added requested_for and completed_by support to work orders
+- Updated redirects based on the user’s selected default page
+- Updated profile and admin pages to display the new user settings
+- Added migration/backfill support from V0.2 to V0.3, including legacy work order and profile field updates
+- Reworked work order templates/pages: completed.html → wo_completed.html, edit.html → wo_edit.html, plus new wo_current.html and wo_create.html
+- updated copyright notice to Version 0.3
+
+### V0.2
 - added user authentication and login flow
 - added user creation and approval workflow
 - added role-based authorization
@@ -83,6 +94,9 @@ The SQLite database will be stored locally at:
 - updated UI pages to load the refactored application structure
 - updated user roles to ladder permission format
 - updated copyright notice to Version 0.2
+
+### V0.1
+- initial release
 
 ## How It Works
 

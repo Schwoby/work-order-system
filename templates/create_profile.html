@@ -6,7 +6,7 @@
   <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="{{ current_theme or 'light' }}">
 <h1>Create Profile</h1>
 
 {% with messages = get_flashed_messages() %}
@@ -38,7 +38,7 @@
       {% endfor %}
     </select>
   </label>
-
+  <br>
   <fieldset>
     <legend>Theme</legend>
     <label>
@@ -52,21 +52,40 @@
       Dark
     </label>
   </fieldset>
-
+  <br>
   <fieldset>
-    <legend>Default View</legend>
+    <legend>Default Page</legend>
     <label>
       <input type="radio" name="default_view" value="option1"
         {% if prefs and prefs['default_view'] == 'option1' %}checked{% elif not prefs %}checked{% endif %} required>
-      Option 1
+      Open Work Orders
     </label>
     <label>
       <input type="radio" name="default_view" value="option2" {% if prefs and prefs['default_view'] == 'option2' %}checked{% endif %}>
-      Option 2
+      Create Work Order
     </label>
     <label>
       <input type="radio" name="default_view" value="option3" {% if prefs and prefs['default_view'] == 'option3' %}checked{% endif %}>
-      Option 3
+      Completed Work Orders
+    </label>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend>Name View</legend>
+    <label>
+      <input type="radio" name="name_view" value="user_id"
+        {% if prefs and prefs['name_view'] == 'user_id' %}checked{% elif not prefs %}checked{% endif %} required>
+      User ID
+    </label>
+    <label>
+      <input type="radio" name="name_view" value="user_name"
+        {% if prefs and prefs['name_view'] == 'user_name' %}checked{% endif %}>
+      User Name
+    </label>
+    <label>
+      <input type="radio" name="name_view" value="display_name"
+        {% if prefs and prefs['name_view'] == 'display_name' %}checked{% endif %}>
+      Display Name
     </label>
   </fieldset>
 

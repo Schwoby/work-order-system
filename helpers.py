@@ -145,13 +145,82 @@ def get_timezones():
         "Europe/Paris",
     ]
 
+def get_current_user_theme():
+    user = get_current_user()
+    if not user:
+        return "light"
+
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT theme
+            FROM profile_preferences
+            WHERE user_key = ?
+        """, (user["user_key"],)).fetchone()
+        return row["theme"] if row and row["theme"] else "light"
+    finally:
+        conn.close()
+
+def get_current_user_name_view():
+    user = get_current_user()
+    if not user:
+        return "user_id"
+
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT name_view
+            FROM profile_preferences
+            WHERE user_key = ?
+        """, (user["user_key"],)).fetchone()
+        return row["name_view"] if row and row["name_view"] else "user_id"
+    finally:
+        conn.close()
+
+def get_requested_by(user_key_value):
+    if not user_key_value:
+        return ""
+
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT la.user_id,
+                   COALESCE(pp.full_name, '') AS full_name,
+                   COALESCE(pp.display_name, '') AS display_name
+            FROM login_auth la
+            LEFT JOIN profile_preferences pp ON pp.user_key = la.user_key
+            WHERE la.user_key = ?
+        """, (user_key_value,)).fetchone()
+
+        if not row:
+            return str(user_key_value)
+
+        name_view = get_current_user_name_view()
+        if name_view == "user_name":
+            return row["full_name"] or row["user_id"]
+        if name_view == "display_name":
+            return row["display_name"] or row["user_id"]
+        return row["user_id"]
+    finally:
+        conn.close()
+
 def get_nav_context():
     user = get_current_user()
     return {
         "current_user": user,
         "current_roles": get_all_user_roles(user["user_key"]) if user else [],
         "current_effective_perm": get_effective_role_perm(user["user_key"]) if user else None,
+        "current_theme": get_current_user_theme(),
+        "current_name_view": get_current_user_name_view(),
     }
+
+def get_default_view_path(default_view):
+    mapping = {
+        "option1": "workorders.wo_current",
+        "option2": "workorders.wo_create",
+        "option3": "workorders.wo_completed",
+    }
+    return mapping.get(default_view, "workorders.wo_current")
 
 def login_required(view):
     @wraps(view)

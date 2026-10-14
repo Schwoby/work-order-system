@@ -2,9 +2,25 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime, timedelta
 
 from db import get_db
-from helpers import active_access_required, get_nav_context, get_current_user, get_effective_role_perm, now_local_str, LOCAL_TZ
+from helpers import (
+    active_access_required,
+    get_nav_context,
+    get_current_user,
+    get_effective_role_perm,
+    now_local_str,
+    LOCAL_TZ,
+    get_requested_by,
+)
 
 workorders_bp = Blueprint("workorders", __name__)
+
+def _decorate_workorders(rows):
+    workorders = []
+    for wo in rows:
+        wo_dict = dict(wo)
+        wo_dict["requested_by_display"] = get_requested_by(wo_dict.get("requested_by"))
+        workorders.append(wo_dict)
+    return workorders
 
 @workorders_bp.route("/wo/current")
 @active_access_required
@@ -25,10 +41,11 @@ def wo_current():
           needed ASC,
           submitted ASC
     """).fetchall()
+    workorders = _decorate_workorders(wos)
     conn.close()
     return render_template(
         "wo_current.html",
-        workorders=wos,
+        workorders=workorders,
         now=datetime.now(LOCAL_TZ),
         soon=datetime.now(LOCAL_TZ) + timedelta(hours=72),
         **get_nav_context()
@@ -39,7 +56,7 @@ def wo_current():
 def wo_create():
     return render_template("wo_create.html", **get_nav_context())
 
-@workorders_bp.route("/completed")
+@workorders_bp.route("/wo/completed")
 @active_access_required
 def wo_completed():
     conn = get_db()
@@ -48,8 +65,9 @@ def wo_completed():
         WHERE completed = 1
         ORDER BY last_update DESC
     """).fetchall()
+    workorders = _decorate_workorders(wos)
     conn.close()
-    return render_template("wo_completed.html", workorders=wos, **get_nav_context())
+    return render_template("wo_completed.html", workorders=workorders, **get_nav_context())
 
 @workorders_bp.route("/add", methods=["POST"])
 @active_access_required
@@ -63,16 +81,17 @@ def add():
     body = request.form["body"]
     room = request.form.get("room")
     needed = request.form.get("needed")
-    requested_by = request.form.get("requested_by")
+    requested_for = request.form.get("requested_for")
+    requested_by = user["user_key"]
 
     now_local = now_local_str()
 
     conn = get_db()
     conn.execute("""
         INSERT INTO workorders
-        (subject, body, room, needed, requested_by, submitted, last_update)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (subject, body, room, needed, requested_by, now_local, now_local))
+        (subject, body, room, needed, requested_for, requested_by, submitted, last_update)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (subject, body, room, needed, requested_for, requested_by, now_local, now_local))
     conn.commit()
     conn.close()
     return redirect(url_for("workorders.wo_current"))
@@ -82,8 +101,11 @@ def add():
 def wo_edit(wo_id):
     conn = get_db()
     wo = conn.execute("SELECT * FROM workorders WHERE id = ?", (wo_id,)).fetchone()
+    wo_dict = dict(wo) if wo else None
+    if wo_dict:
+        wo_dict["requested_by_display"] = get_requested_by(wo_dict.get("requested_by"))
     conn.close()
-    return render_template("wo_edit.html", wo=wo, **get_nav_context())
+    return render_template("wo_edit.html", wo=wo_dict, **get_nav_context())
 
 @workorders_bp.route("/update/<int:wo_id>", methods=["POST"])
 @active_access_required
@@ -91,13 +113,11 @@ def update(wo_id):
     user = get_current_user()
     effective_perm = get_effective_role_perm(user["user_key"])
 
-    completed = 1 if request.form.get("completed") == "on" else 0
     subject = request.form["subject"]
     body = request.form["body"]
     room = request.form.get("room")
     needed = request.form.get("needed")
-    requested_by = request.form.get("requested_by")
-    completion_text = request.form.get("completion_text")
+    requested_for = request.form.get("requested_for")
 
     ts = now_local_str()
 
@@ -115,24 +135,30 @@ def update(wo_id):
                     body = ?,
                     room = ?,
                     needed = ?,
-                    requested_by = ?,
+                    requested_for = ?,
                     last_update = ?
                 WHERE id = ?
-            """, (subject, body, room, needed, requested_by, ts, wo_id))
+            """, (subject, body, room, needed, requested_for, ts, wo_id))
         else:
+            completion_text = request.form.get("completion_text")
+
+            completed = 1 if request.form.get("completed") == "on" else 0
+            completed_by = user["user_key"] if completed == 1 else None
+
             conn.execute("""
                 UPDATE workorders
                 SET subject = ?,
                     body = ?,
                     room = ?,
                     needed = ?,
-                    requested_by = ?,
+                    requested_for = ?,
                     completion_text = ?,
                     completed = ?,
+                    completed_by = ?,
                     last_update = ?
                 WHERE id = ?
-            """, (subject, body, room, needed, requested_by,
-                  completion_text, completed, ts, wo_id))
+            """, (subject, body, room, needed, requested_for,
+                  completion_text, completed, completed_by, ts, wo_id))
 
         conn.commit()
         return redirect(url_for("workorders.wo_current"))

@@ -12,6 +12,7 @@ from helpers import (
     get_effective_role_perm,
     is_valid_email,
     create_user_account,
+    get_default_view_path,
 )
 
 users_bp = Blueprint("users", __name__)
@@ -32,13 +33,24 @@ def index():
         if not user_profile_complete(result):
             return redirect(url_for("users.create_profile"))
 
+        conn = get_db()
+        try:
+            prefs = conn.execute("""
+                SELECT default_view
+                FROM profile_preferences
+                WHERE user_key = ?
+            """, (result,)).fetchone()
+            default_view = prefs["default_view"] if prefs else "option1"
+        finally:
+            conn.close()
+
         effective_perm = get_effective_role_perm(result)
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
             flash("Login successful.")
-            return redirect(url_for("workorders.wo_current"))
+            return redirect(url_for(get_default_view_path(default_view)))
 
         flash("Your account does not have access to the work order system.")
         return redirect(url_for("users.user_profile"))
@@ -48,11 +60,22 @@ def index():
         if not user_profile_complete(user["user_key"]):
             return redirect(url_for("users.create_profile"))
 
+        conn = get_db()
+        try:
+            prefs = conn.execute("""
+                SELECT default_view
+                FROM profile_preferences
+                WHERE user_key = ?
+            """, (user["user_key"],)).fetchone()
+            default_view = prefs["default_view"] if prefs else "option1"
+        finally:
+            conn.close()
+
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
-            return redirect(url_for("workorders.wo_current"))
+            return redirect(url_for(get_default_view_path(default_view)))
 
         return redirect(url_for("users.user_profile"))
 
@@ -88,7 +111,7 @@ def user_create():
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
             flash("Account created successfully.")
-            return redirect(url_for("workorders.wo_current"))
+            return redirect(url_for("users.create_profile"))
 
         flash("Account created, but no work order access is available.")
         return redirect(url_for("users.user_profile"))
@@ -104,7 +127,78 @@ def user_logout():
 @users_bp.route("/user/profile", methods=["GET", "POST"])
 @login_required
 def user_profile():
-    return redirect(url_for("users.create_profile"))
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("users.index"))
+
+    conn = get_db()
+    try:
+        prefs = conn.execute("""
+            SELECT * FROM profile_preferences WHERE user_key = ?
+        """, (user["user_key"],)).fetchone()
+
+        if request.method == "POST":
+            password = request.form.get("password", "").strip()
+            verify_password = request.form.get("verify_password", "").strip()
+            full_name = request.form.get("full_name", "").strip()
+            display_name = request.form.get("display_name", "").strip()
+            timezone = request.form.get("timezone", "").strip()
+            theme = request.form.get("theme", "").strip()
+            default_view = request.form.get("default_view", "").strip()
+            name_view = request.form.get("name_view", "").strip()
+
+            if not all([full_name, display_name, timezone, theme, default_view, name_view]):
+                flash("All profile fields are required.")
+                return redirect(url_for("users.user_profile"))
+
+            if prefs:
+                conn.execute("""
+                    UPDATE profile_preferences
+                    SET full_name = ?, display_name = ?, timezone = ?, theme = ?, default_view = ?, name_view = ?
+                    WHERE user_key = ?
+                """, (full_name, display_name, timezone, theme, default_view, name_view, user["user_key"]))
+            else:
+                conn.execute("""
+                    INSERT INTO profile_preferences
+                    (user_key, full_name, display_name, timezone, theme, default_view, name_view)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (user["user_key"], full_name, display_name, timezone, theme, default_view, name_view))
+
+            if password:
+                if password != verify_password:
+                    flash("Passwords do not match.")
+                    return redirect(url_for("users.user_profile"))
+
+                from helpers import password_meets_rules
+                if not password_meets_rules(password):
+                    flash(
+                        "Password must be at least 8 characters and include "
+                        "1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character "
+                        "from: ! - _ ( ) ."
+                    )
+                    return redirect(url_for("users.user_profile"))
+
+                from werkzeug.security import generate_password_hash
+                conn.execute("""
+                    UPDATE login_auth
+                    SET password_hash = ?
+                    WHERE user_key = ?
+                """, (generate_password_hash(password), user["user_key"]))
+
+            conn.commit()
+            flash("Profile updated.")
+
+            return redirect(url_for(get_default_view_path(default_view)))
+
+        return render_template(
+            "user_edit.html",
+            prefs=prefs,
+            timezones=get_timezones(),
+            status_text=user_status_text(user["user_key"]),
+            **get_nav_context()
+        )
+    finally:
+        conn.close()
 
 @users_bp.route("/profile/create", methods=["GET", "POST"])
 @login_required
@@ -126,23 +220,24 @@ def create_profile():
             timezone = request.form.get("timezone", "").strip()
             theme = request.form.get("theme", "").strip()
             default_view = request.form.get("default_view", "").strip()
+            name_view = request.form.get("name_view", "").strip()
 
-            if not all([full_name, display_name, timezone, theme, default_view]):
+            if not all([full_name, display_name, timezone, theme, default_view, name_view]):
                 flash("All profile fields are required.")
                 return redirect(url_for("users.create_profile"))
 
             if existing:
                 conn.execute("""
                     UPDATE profile_preferences
-                    SET full_name = ?, display_name = ?, timezone = ?, theme = ?, default_view = ?
+                    SET full_name = ?, display_name = ?, timezone = ?, theme = ?, default_view = ?, name_view = ?
                     WHERE user_key = ?
-                """, (full_name, display_name, timezone, theme, default_view, user["user_key"]))
+                """, (full_name, display_name, timezone, theme, default_view, name_view, user["user_key"]))
             else:
                 conn.execute("""
                     INSERT INTO profile_preferences
-                    (user_key, full_name, display_name, timezone, theme, default_view)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (user["user_key"], full_name, display_name, timezone, theme, default_view))
+                    (user_key, full_name, display_name, timezone, theme, default_view, name_view)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (user["user_key"], full_name, display_name, timezone, theme, default_view, name_view))
 
             conn.commit()
 
@@ -153,7 +248,7 @@ def create_profile():
 
             if effective_perm in (1, 2, 3):
                 flash("Profile saved.")
-                return redirect(url_for("workorders.wo_current"))
+                return redirect(url_for(get_default_view_path(default_view)))
 
             flash("Profile saved.")
             return redirect(url_for("users.user_profile"))
@@ -260,9 +355,9 @@ def admin_user_edit(user_key):
             else:
                 conn.execute("""
                     INSERT INTO profile_preferences
-                    (user_key, full_name, display_name, timezone, theme, default_view)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (user_key, full_name, display_name, "UTC", "light", "option1"))
+                    (user_key, full_name, display_name, timezone, theme, default_view, name_view)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (user_key, full_name, display_name, "UTC", "light", "option1", "user_id"))
 
             conn.execute("DELETE FROM account_roles WHERE user_key = ?", (user_key,))
 

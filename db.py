@@ -10,6 +10,26 @@ def get_db():
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
+def _column_exists(conn, table_name, column_name):
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return any(row["name"] == column_name for row in rows)
+
+def _ensure_column(conn, table_name, column_name, column_type, default_sql=None):
+    if _column_exists(conn, table_name, column_name):
+        return
+    sql = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+    if default_sql is not None:
+        sql += f" DEFAULT {default_sql}"
+    conn.execute(sql)
+
+def _get_initial_user_id(conn):
+    row = conn.execute("""
+        SELECT user_id
+        FROM login_auth
+        WHERE user_key = 1
+    """).fetchone()
+    return row["user_id"] if row else ""
+
 def init_db():
     """Ensure all tables exist using current schema."""
     conn = get_db()
@@ -64,6 +84,7 @@ def init_db():
             timezone TEXT NOT NULL,
             theme TEXT NOT NULL,
             default_view TEXT NOT NULL,
+            name_view TEXT NOT NULL DEFAULT 'user_id',
             FOREIGN KEY (user_key) REFERENCES internal_account(user_key) ON DELETE CASCADE
         )
     """)
@@ -91,6 +112,37 @@ def init_db():
             (5, "suspended", 0),
             (6, "rejected", 0),
         ])
+
+    _ensure_column(conn, "profile_preferences", "name_view", "TEXT", "'user_id'")
+
+    # Work order migrations
+    _ensure_column(conn, "workorders", "requested_for", "TEXT")
+    _ensure_column(conn, "workorders", "completed_by", "TEXT")
+
+    # Backfill requested_for from old requested_by values
+    conn.execute("""
+        UPDATE workorders
+        SET requested_for = requested_by
+        WHERE (requested_for IS NULL OR TRIM(requested_for) = '')
+          AND requested_by IS NOT NULL
+          AND TRIM(requested_by) != ''
+    """)
+
+    # Update all existing requested_by values to user_key = 1
+    conn.execute("""
+        UPDATE workorders
+        SET requested_by = '1'
+    """)
+
+    # Backfill completed_by for already completed rows
+    initial_user_id = _get_initial_user_id(conn)
+    if initial_user_id:
+        conn.execute("""
+            UPDATE workorders
+            SET completed_by = ?
+            WHERE completed = 1
+              AND (completed_by IS NULL OR TRIM(completed_by) = '')
+        """, (initial_user_id,))
 
     conn.commit()
     conn.close()

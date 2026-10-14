@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Flask
 
 from db import init_db
-from helpers import env_bool
+from helpers import env_bool, get_requested_by
 from users import users_bp
 from workorders import workorders_bp
 
@@ -14,6 +14,8 @@ app.config["TEMPLATES_AUTO_RELOAD"] = env_bool("TEMPLATES_AUTO_RELOAD", False)
 
 app.register_blueprint(users_bp)
 app.register_blueprint(workorders_bp)
+
+app.jinja_env.globals["display_requested_by"] = get_requested_by
 
 os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
 init_db()

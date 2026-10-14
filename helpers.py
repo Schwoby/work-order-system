@@ -214,6 +214,14 @@ def get_nav_context():
         "current_name_view": get_current_user_name_view(),
     }
 
+def get_default_view_path(default_view):
+    mapping = {
+        "option1": "workorders.wo_current",
+        "option2": "workorders.wo_create",
+        "option3": "workorders.wo_completed",
+    }
+    return mapping.get(default_view, "workorders.wo_current")
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -346,11 +354,3 @@ def authenticate_user(email, password):
 
     finally:
         conn.close()
-
-def get_default_view_path(default_view):
-    mapping = {
-        "option1": "workorders.wo_current",
-        "option2": "workorders.wo_create",
-        "option3": "workorders.wo_completed",
-    }
-    return mapping.get(default_view, "workorders.wo_current")

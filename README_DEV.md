@@ -5,6 +5,17 @@ This branch tracks active development work that has not yet been merged into pro
 ## Current Goals / Scope
 
 ### V0.4 Notifications
+- Initial Profile setup via new user creation is incomplete
+- Inconsistent terms being used for Name View section in profile
+- Change Subject -> Title
+- Remove Pending select option from Admin Management
+- Validate User ID/User Name cannot be created more than once
+- Completed Work Orders page
+  - Completion Notes is not set correctly
+  - Completed By is showing User ID number and not the profile selected option (match Requested By setting from Open Work Orders)
+- Validate Time Zone usage
+
+### V0.5 Notifications
 - User-defined notifications, including but not limited to:
   - add methods of being notifed
   - pair methods with content type

@@ -35,7 +35,7 @@
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
       <td class='cap'>{{ display_requested_by(wo['completed_by']) }}</td>
-      <td class='left capfirst col-notes'>{{ wo['completion_text'] or '' }}</td>
+      <td class='left capfirst'>{{ wo['completion_text'] or '' }}</td>
       <td>{% if wo['last_update_date'] %}<span class="no-wrap">{{ wo['last_update_date'] }}<br>{{ wo['last_update_time'] }}</span>{% endif %}</td>
     </tr>
   {% else %}

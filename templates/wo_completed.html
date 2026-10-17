@@ -21,7 +21,7 @@
       <th>Requested For</th>
       <th>Submitted</th>
       <th>Completed By</th>
-      <th class='left'>Completion Notes</th>
+      <th class='left col-notes'>Completion Notes</th>
       <th>Completed</th>
     </tr>
   </thead>
@@ -36,8 +36,8 @@
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
       <td>{{ wo['submitted'] or '' }}</td>
-      <td class='cap'>{{ wo['completed_by'] or '' }}</td>
-      <td class='left capfirst'>{{ wo['completion_text'] or '' }}</td>
+      <td class='cap'>{{ display_requested_by(wo['completed_by']) }}</td>
+      <td class='left capfirst col-notes'>{{ wo['completion_text'] or '' }}</td>
       <td>{{ wo['last_update'] or '' }}</td>
     </tr>
   {% else %}

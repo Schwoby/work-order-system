@@ -120,6 +120,9 @@ body.dark tbody tr:not(.due):not(.overdue) a {
 body.dark nav.nav-links a {
     color: var(--link-dark);
 }
+body.dark nav.nav-links a:visited {
+    color: var(--due-odd);
+}
 .due:nth-child(even) {
     background-color: var(--due-even);
     color: var(--text);

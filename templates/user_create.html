@@ -31,7 +31,8 @@
   <label>Verify Password:<br>
     <input type="password" name="verify_password" required autocomplete="new-password">
   </label>
-<p>Password rules: at least 8 characters, 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character from ! - _ ( ) .</p>
+  <p>Password rules: at least 8 characters, 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character from ! - _ ( ) .</p>
+  <br>
   <label>Full Name:<br>
     <input type="text" name="full_name" value="{{ prefs['full_name'] if prefs else '' }}" required>
   </label>
@@ -49,6 +50,7 @@
     </select>
   </label>
 
+  <br>
   <fieldset>
     <legend>Theme</legend>
     <label>
@@ -63,6 +65,7 @@
     </label>
   </fieldset>
 
+  <br>
   <fieldset>
     <legend>Default Page</legend>
     <label>
@@ -80,6 +83,7 @@
     </label>
   </fieldset>
 
+  <br>
   <fieldset>
     <legend>Name View</legend>
     <label>
@@ -99,6 +103,7 @@
     </label>
   </fieldset>
 
+  <br>
   <button type="submit">Save Profile</button>
 </form>
 

@@ -31,14 +31,78 @@
   <label>Verify Password:<br>
     <input type="password" name="verify_password" required autocomplete="new-password">
   </label>
+<p>Password rules: at least 8 characters, 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character from ! - _ ( ) .</p>
+  <label>Full Name:<br>
+    <input type="text" name="full_name" value="{{ prefs['full_name'] if prefs else '' }}" required>
+  </label>
 
-  <button type="submit">Create Account</button>
+  <label>Display Name:<br>
+    <input type="text" name="display_name" value="{{ prefs['display_name'] if prefs else '' }}" required>
+  </label>
+
+  <label>Timezone:<br>
+    <select name="timezone" required>
+      <option value="">-- Select Timezone --</option>
+      {% for tz in timezones %}
+        <option value="{{ tz }}" {% if prefs and prefs['timezone'] == tz %}selected{% endif %}>{{ tz }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <fieldset>
+    <legend>Theme</legend>
+    <label>
+      <input type="radio" name="theme" value="light"
+        {% if prefs and prefs['theme'] == 'light' %}checked{% elif not prefs %}checked{% endif %} required>
+      Light
+    </label>
+    <label>
+      <input type="radio" name="theme" value="dark"
+        {% if prefs and prefs['theme'] == 'dark' %}checked{% endif %}>
+      Dark
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Default Page</legend>
+    <label>
+      <input type="radio" name="default_view" value="option1"
+        {% if prefs and prefs['default_view'] == 'option1' %}checked{% elif not prefs %}checked{% endif %} required>
+      Open Work Orders
+    </label>
+    <label>
+      <input type="radio" name="default_view" value="option2" {% if prefs and prefs['default_view'] == 'option2' %}checked{% endif %}>
+      Create Work Order
+    </label>
+    <label>
+      <input type="radio" name="default_view" value="option3" {% if prefs and prefs['default_view'] == 'option3' %}checked{% endif %}>
+      Completed Work Orders
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Name View</legend>
+    <label>
+      <input type="radio" name="name_view" value="user_id"
+        {% if prefs and prefs['name_view'] == 'user_id' %}checked{% elif not prefs %}checked{% endif %} required>
+      User ID
+    </label>
+    <label>
+      <input type="radio" name="name_view" value="user_name"
+        {% if prefs and prefs['name_view'] == 'user_name' %}checked{% endif %}>
+      User Name
+    </label>
+    <label>
+      <input type="radio" name="name_view" value="display_name"
+        {% if prefs and prefs['name_view'] == 'display_name' %}checked{% endif %}>
+      Display Name
+    </label>
+  </fieldset>
+
+  <button type="submit">Save Profile</button>
 </form>
 
-<p>Password rules: at least 8 characters, 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character from ! - _ ( ) .</p>
-
-<h3><a href="{{ url_for('users.index') }}">Back to Login</a></h3>
-<p></p>
+{% include "_nav.html" %}
 
 <h4></h4>
 </body>

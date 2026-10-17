@@ -14,12 +14,11 @@
     <tr>
       <th>ID</th>
       <th class='left'>Title</th>
-      <th class='left'>Description</th>
+      <th class='left col-desc'>Description</th>
       <th>Area</th>
       <th>Needed</th>
       <th>Requested By</th>
       <th>Requested For</th>
-      <th>Submitted</th>
       <th>Completed By</th>
       <th class='left col-notes'>Completion Notes</th>
       <th>Completed</th>
@@ -35,13 +34,12 @@
       <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed'] | format_needed_date }}</span> <span class="no-wrap">{{ wo['needed'] | format_needed_time }}</span>{% endif %}</td>
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
-      <td>{{ wo['submitted'] or '' }}</td>
       <td class='cap'>{{ display_requested_by(wo['completed_by']) }}</td>
       <td class='left capfirst col-notes'>{{ wo['completion_text'] or '' }}</td>
       <td>{{ wo['last_update'] or '' }}</td>
     </tr>
   {% else %}
-    <tr><td colspan="11">No completed work orders.</td></tr>
+    <tr><td colspan="10">No completed work orders.</td></tr>
   {% endfor %}
   </tbody>
 </table>

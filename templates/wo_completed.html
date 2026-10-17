@@ -5,46 +5,11 @@
   <title>Completed Work Orders</title>
   <link rel="icon" href="{{ url_for('static', filename='5411012-512-BW.png') }}" type="image/x-icon">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    table {
-      table-layout: fixed;
-      width: 100%;
-    }
-
-    col.col-desc,
-    col.col-notes {
-      width: 30%;
-    }
-
-    td,
-    th {
-      overflow-wrap: anywhere;
-      word-break: normal;
-    }
-
-    td.left.capfirst,
-    td.left.cap,
-    td.left {
-      overflow-wrap: anywhere;
-    }
-  </style>
 </head>
 <body class="{{ current_theme or 'light' }}">
 <h1>Completed Work Orders</h1>
 
 <table>
-  <colgroup>
-    <col>
-    <col>
-    <col class="col-desc">
-    <col>
-    <col>
-    <col>
-    <col>
-    <col>
-    <col class="col-notes">
-    <col>
-  </colgroup>
   <thead>
     <tr>
       <th>ID</th>

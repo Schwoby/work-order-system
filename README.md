@@ -73,6 +73,15 @@ The SQLite database will be stored locally at:
 
 ## Change Log
 
+### V0.4
+- Merged the new profile setup into a single page and removed `templates/create_profile.html`
+- Updated terms to stay consistent site-wide
+- Updated the column title from “Subject” to “Title”
+- Removed “pending” from the list of possible User Permissions on the Admin Users page
+- Corrected an issue where the Completed Work Orders page showed UserID instead of the selected Name View option
+- Corrected time zone usage to be dynamically adjusted based on the user-defined Timezone
+- updated copyright notice to Version 0.4 and copyright year to 2025-2026
+
 ### V0.3
 - Added profile-based light/dark mode support
 - Added name display preference in user profile settings

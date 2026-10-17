@@ -26,17 +26,17 @@
   </thead>
   <tbody>
   {% for wo in workorders %}
-    <tr class="{% if wo['needed'] and wo['needed'] <= now.strftime('%Y-%m-%dT%H:%M') %}overdue{% elif wo['needed'] and wo['needed'] <= soon.strftime('%Y-%m-%dT%H:%M') %}due{% endif %}">
+    <tr class="{% if wo['needed'] and wo['needed'] <= now_epoch %}overdue{% elif wo['needed'] and wo['needed'] <= soon_epoch %}due{% endif %}">
       <td><a href="{{ url_for('workorders.wo_edit', wo_id=wo['id']) }}">{{ wo['id'] }}</a></td>
       <td class='left cap'>{{ wo['subject'] }}</td>
       <td class='left capfirst col-desc'>{{ wo['body'] }}</td>
       <td class='cap'>{{ wo['room'] or '' }}</td>
-      <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed'] | format_needed_date }}</span> <span class="no-wrap">{{ wo['needed'] | format_needed_time }}</span>{% endif %}</td>
+      <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed_date'] }}</span> <span class="no-wrap">{{ wo['needed_time'] }}</span>{% endif %}</td>
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
-      <td>{{ wo['submitted'] or '' }}</td>
+      <td>{{ wo['submitted_date'] }} {{ wo['submitted_time'] }}</td>
       <td class='left capfirst col-notes'>{{ wo['completion_text'] or '' }}</td>
-      <td>{{ wo['last_update'] or '' }}</td>
+      <td>{{ wo['last_update_date'] }} {{ wo['last_update_time'] }}</td>
     </tr>
   {% else %}
     <tr><td colspan="10">No open work orders.</td></tr>

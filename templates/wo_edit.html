@@ -12,7 +12,7 @@
 <form action="{{ url_for('workorders.update', wo_id=wo['id']) }}" method="post">
   <input type="hidden" name="id" value="{{ wo['id'] }}">
 
-  <label><b>Subject:</b><br>
+  <label><b>Title:</b><br>
     <input type="text" name="subject" value="{{ wo['subject'] }}" required>
   </label>
 

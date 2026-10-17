@@ -17,6 +17,19 @@ from helpers import (
 
 users_bp = Blueprint("users", __name__)
 
+def _get_user_default_view_endpoint(user_key):
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT default_view
+            FROM profile_preferences
+            WHERE user_key = ?
+        """, (user_key,)).fetchone()
+        default_view = row["default_view"] if row and row["default_view"] else "option1"
+        return get_default_view_path(default_view)
+    finally:
+        conn.close()
+
 @users_bp.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -33,24 +46,13 @@ def index():
         if not user_profile_complete(result):
             return redirect(url_for("users.create_profile"))
 
-        conn = get_db()
-        try:
-            prefs = conn.execute("""
-                SELECT default_view
-                FROM profile_preferences
-                WHERE user_key = ?
-            """, (result,)).fetchone()
-            default_view = prefs["default_view"] if prefs else "option1"
-        finally:
-            conn.close()
-
         effective_perm = get_effective_role_perm(result)
         if effective_perm == 0:
             flash("Your account is blocked from accessing the work order system.")
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
             flash("Login successful.")
-            return redirect(url_for(get_default_view_path(default_view)))
+            return redirect(url_for(_get_user_default_view_endpoint(result)))
 
         flash("Your account does not have access to the work order system.")
         return redirect(url_for("users.user_profile"))
@@ -60,22 +62,11 @@ def index():
         if not user_profile_complete(user["user_key"]):
             return redirect(url_for("users.create_profile"))
 
-        conn = get_db()
-        try:
-            prefs = conn.execute("""
-                SELECT default_view
-                FROM profile_preferences
-                WHERE user_key = ?
-            """, (user["user_key"],)).fetchone()
-            default_view = prefs["default_view"] if prefs else "option1"
-        finally:
-            conn.close()
-
         effective_perm = get_effective_role_perm(user["user_key"])
         if effective_perm == 0:
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
-            return redirect(url_for(get_default_view_path(default_view)))
+            return redirect(url_for(_get_user_default_view_endpoint(user["user_key"])))
 
         return redirect(url_for("users.user_profile"))
 
@@ -111,7 +102,7 @@ def user_create():
             return redirect(url_for("users.user_profile"))
         if effective_perm in (1, 2, 3):
             flash("Account created successfully.")
-            return redirect(url_for("users.create_profile"))
+            return redirect(url_for(_get_user_default_view_endpoint(result)))
 
         flash("Account created, but no work order access is available.")
         return redirect(url_for("users.user_profile"))
@@ -188,7 +179,11 @@ def user_profile():
             conn.commit()
             flash("Profile updated.")
 
-            return redirect(url_for(get_default_view_path(default_view)))
+            effective_perm = get_effective_role_perm(user["user_key"])
+            if effective_perm == 0 or effective_perm is None:
+                return redirect(url_for("users.user_profile"))
+
+            return redirect(url_for(_get_user_default_view_endpoint(user["user_key"])))
 
         return render_template(
             "user_edit.html",
@@ -242,13 +237,13 @@ def create_profile():
             conn.commit()
 
             effective_perm = get_effective_role_perm(user["user_key"])
-            if effective_perm == 0:
+            if effective_perm == 0 or effective_perm is None:
                 flash("Profile saved, but your account is blocked from the work order system.")
                 return redirect(url_for("users.user_profile"))
 
             if effective_perm in (1, 2, 3):
                 flash("Profile saved.")
-                return redirect(url_for(get_default_view_path(default_view)))
+                return redirect(url_for(_get_user_default_view_endpoint(user["user_key"])))
 
             flash("Profile saved.")
             return redirect(url_for("users.user_profile"))

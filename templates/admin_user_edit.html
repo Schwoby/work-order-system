@@ -39,11 +39,13 @@
   <h2>User Permissions</h2>
   <div id="perm-group">
     {% for role in all_roles %}
-      <label>
-        <input type="radio" name="status_role" value="{{ role['role_key'] }}"
-               {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
-        {{ role['role_name']|capitalize }}
-      </label>
+      {% if role['role_name'] != 'pending' %}
+        <label>
+          <input type="radio" name="status_role" value="{{ role['role_key'] }}"
+                 {% if role['role_key'] in assigned_role_keys %}checked{% endif %}>
+          {{ role['role_name']|capitalize }}
+        </label>
+      {% endif %}
     {% endfor %}
   </div>
 

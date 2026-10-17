@@ -13,15 +13,14 @@
   <thead>
     <tr>
       <th>ID</th>
-      <th class='left'>Subject</th>
-      <th class='left'>Description</th>
+      <th class='left'>Title</th>
+      <th class='left col-desc'>Description</th>
       <th>Area</th>
       <th>Needed</th>
       <th>Requested By</th>
       <th>Requested For</th>
-      <th>Submitted</th>
       <th>Completed By</th>
-      <th class='left'>Completion Notes</th>
+      <th class='left col-notes no-wrap'>Completion Notes</th>
       <th>Completed</th>
     </tr>
   </thead>
@@ -30,18 +29,17 @@
     <tr>
       <td>{{ wo['id'] }}</td>
       <td class='left cap'>{{ wo['subject'] }}</td>
-      <td class='left capfirst'>{{ wo['body'] }}</td>
+      <td class='left capfirst col-desc'>{{ wo['body'] }}</td>
       <td class='cap'>{{ wo['room'] or '' }}</td>
-      <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed'] | format_needed_date }}</span> <span class="no-wrap">{{ wo['needed'] | format_needed_time }}</span>{% endif %}</td>
+      <td>{% if wo['needed'] %}<span class="no-wrap">{{ wo['needed_date'] }}<br>{{ wo['needed_time'] }}</span>{% endif %}</td>
       <td class='cap'>{{ display_requested_by(wo['requested_by']) }}</td>
       <td class='cap'>{{ wo['requested_for'] or '' }}</td>
-      <td>{{ wo['submitted'] or '' }}</td>
-      <td class='cap'>{{ wo['completed_by'] or '' }}</td>
+      <td class='cap no-wrap'>{{ display_requested_by(wo['completed_by']) }}</td>
       <td class='left capfirst'>{{ wo['completion_text'] or '' }}</td>
-      <td>{{ wo['last_update'] or '' }}</td>
+      <td>{% if wo['last_update_date'] %}<span class="no-wrap">{{ wo['last_update_date'] }}<br>{{ wo['last_update_time'] }}</span>{% endif %}</td>
     </tr>
   {% else %}
-    <tr><td colspan="11">No completed work orders.</td></tr>
+    <tr><td colspan="10">No completed work orders.</td></tr>
   {% endfor %}
   </tbody>
 </table>

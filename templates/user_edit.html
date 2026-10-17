@@ -85,11 +85,11 @@
     <h2>Name View</h2>
     <label>
       <input type="radio" name="name_view" value="user_id" {% if prefs and prefs['name_view'] == 'user_id' %}checked{% endif %} required>
-      User ID
+      User Name
     </label>
     <label>
       <input type="radio" name="name_view" value="user_name" {% if prefs and prefs['name_view'] == 'user_name' %}checked{% endif %}>
-      User Name
+      Full Name
     </label>
     <label>
       <input type="radio" name="name_view" value="display_name" {% if prefs and prefs['name_view'] == 'display_name' %}checked{% endif %}>

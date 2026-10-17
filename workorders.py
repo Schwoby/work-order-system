@@ -7,9 +7,12 @@ from helpers import (
     get_nav_context,
     get_current_user,
     get_effective_role_perm,
-    now_local_str,
-    LOCAL_TZ,
+    epoch_now,
     get_requested_by,
+    local_datetime_str_to_epoch,
+    epoch_to_local_date,
+    epoch_to_local_time,
+    epoch_to_local_dt,
 )
 
 workorders_bp = Blueprint("workorders", __name__)
@@ -19,6 +22,17 @@ def _decorate_workorders(rows):
     for wo in rows:
         wo_dict = dict(wo)
         wo_dict["requested_by_display"] = get_requested_by(wo_dict.get("requested_by"))
+
+        needed_dt = epoch_to_local_dt(wo_dict.get("needed"))
+        submitted_dt = epoch_to_local_dt(wo_dict.get("submitted"))
+        last_update_dt = epoch_to_local_dt(wo_dict.get("last_update"))
+        wo_dict["needed_date"] = epoch_to_local_date(wo_dict.get("needed"))
+        wo_dict["needed_time"] = epoch_to_local_time(wo_dict.get("needed"))
+        wo_dict["submitted_date"] = epoch_to_local_date(wo_dict.get("submitted"))
+        wo_dict["submitted_time"] = epoch_to_local_time(wo_dict.get("submitted"))
+        wo_dict["last_update_date"] = epoch_to_local_date(wo_dict.get("last_update"))
+        wo_dict["last_update_time"] = epoch_to_local_time(wo_dict.get("last_update"))
+        wo_dict["needed_input"] = needed_dt.strftime("%Y-%m-%dT%H:%M") if needed_dt else ""
         workorders.append(wo_dict)
     return workorders
 
@@ -31,11 +45,8 @@ def wo_current():
         WHERE completed = 0
         ORDER BY
           CASE
-            WHEN needed IS NOT NULL
-                 AND TRIM(needed) != ''
-                 AND needed <= strftime('%Y-%m-%dT%H:%M') THEN 0
-            WHEN needed IS NOT NULL
-                 AND TRIM(needed) != '' THEN 1
+            WHEN needed IS NOT NULL AND needed <= strftime('%s','now') THEN 0
+            WHEN needed IS NOT NULL THEN 1
             ELSE 2
           END,
           needed ASC,
@@ -43,11 +54,13 @@ def wo_current():
     """).fetchall()
     workorders = _decorate_workorders(wos)
     conn.close()
+    now_epoch = int(datetime.utcnow().timestamp())
+    soon_epoch = now_epoch + (72 * 3600)
     return render_template(
         "wo_current.html",
         workorders=workorders,
-        now=datetime.now(LOCAL_TZ),
-        soon=datetime.now(LOCAL_TZ) + timedelta(hours=72),
+        now_epoch=now_epoch,
+        soon_epoch=soon_epoch,
         **get_nav_context()
     )
 
@@ -80,18 +93,19 @@ def add():
     subject = request.form["subject"]
     body = request.form["body"]
     room = request.form.get("room")
-    needed = request.form.get("needed")
+    needed_raw = request.form.get("needed")
     requested_for = request.form.get("requested_for")
     requested_by = user["user_key"]
 
-    now_local = now_local_str()
+    now_epoch = epoch_now()
+    needed = local_datetime_str_to_epoch(needed_raw)
 
     conn = get_db()
     conn.execute("""
         INSERT INTO workorders
         (subject, body, room, needed, requested_for, requested_by, submitted, last_update)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (subject, body, room, needed, requested_for, requested_by, now_local, now_local))
+    """, (subject, body, room, needed, requested_for, requested_by, now_epoch, now_epoch))
     conn.commit()
     conn.close()
     return redirect(url_for("workorders.wo_current"))
@@ -104,6 +118,8 @@ def wo_edit(wo_id):
     wo_dict = dict(wo) if wo else None
     if wo_dict:
         wo_dict["requested_by_display"] = get_requested_by(wo_dict.get("requested_by"))
+        needed_dt = epoch_to_local_dt(wo_dict.get("needed"))
+        wo_dict["needed_input"] = needed_dt.strftime("%Y-%m-%dT%H:%M") if needed_dt else ""
     conn.close()
     return render_template("wo_edit.html", wo=wo_dict, **get_nav_context())
 
@@ -116,10 +132,11 @@ def update(wo_id):
     subject = request.form["subject"]
     body = request.form["body"]
     room = request.form.get("room")
-    needed = request.form.get("needed")
+    needed_raw = request.form.get("needed")
     requested_for = request.form.get("requested_for")
 
-    ts = now_local_str()
+    ts = epoch_now()
+    needed = local_datetime_str_to_epoch(needed_raw)
 
     conn = get_db()
     try:

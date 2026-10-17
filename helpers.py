@@ -2,7 +2,7 @@ import os
 import re
 import time
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from zoneinfo import ZoneInfo
 
@@ -34,11 +34,8 @@ PASSWORD_REGEX = re.compile(
     r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!\-_().])[A-Za-z\d!\-_().]{8,}$"
 )
 
-def now_local_str():
-    return datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
-
 def epoch_now():
-    return str(int(time.time()))
+    return int(time.time())
 
 def normalize_email(email):
     return (email or "").strip().lower()
@@ -354,3 +351,56 @@ def authenticate_user(email, password):
 
     finally:
         conn.close()
+
+def parse_user_timezone():
+    user = get_current_user()
+    if not user:
+        return ZoneInfo("UTC")
+
+    conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT timezone
+            FROM profile_preferences
+            WHERE user_key = ?
+        """, (user["user_key"],)).fetchone()
+        tz_name = row["timezone"] if row and row["timezone"] else "UTC"
+        try:
+            return ZoneInfo(tz_name)
+        except Exception:
+            return ZoneInfo("UTC")
+    finally:
+        conn.close()
+
+def epoch_to_local_dt(value, tz=None):
+    if value is None or value == "":
+        return None
+    try:
+        epoch_val = int(value)
+    except (TypeError, ValueError):
+        return None
+    tz = tz or parse_user_timezone()
+    return datetime.fromtimestamp(epoch_val, tz=timezone.utc).astimezone(tz)
+
+def epoch_to_local_date(value, tz=None):
+    dt = epoch_to_local_dt(value, tz)
+    return dt.strftime("%m/%d/%Y") if dt else ""
+
+def epoch_to_local_time(value, tz=None):
+    dt = epoch_to_local_dt(value, tz)
+    return dt.strftime("%I:%M %p").lstrip("0") if dt else ""
+
+def local_datetime_str_to_epoch(value, tz=None):
+    if not value:
+        return None
+    tz = tz or parse_user_timezone()
+    try:
+        dt = datetime.fromisoformat(str(value))
+    except ValueError:
+        try:
+            dt = datetime.fromisoformat(str(value).replace("T", " "))
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=tz)
+    return int(dt.astimezone(timezone.utc).timestamp())
